@@ -1,0 +1,12 @@
+{
+  "domain": "jq300",
+  "name": "JQ-300/200/100 Indoor Air Quality Meter",
+  "documentation": "https://github.com/Limych/ha-jq300",
+  "dependencies": [],
+  "config_flow": false,
+  "codeowners": [
+    "@Limych"
+  ],
+  "requirements": [
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "JQ-300/200/100 Indoor Air Quality Meter",
+  "domains": ["jq300", "sensor"],
+  "iot_class": "Local Push"
+}
