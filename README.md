@@ -21,6 +21,8 @@ I also suggest you [visit the support topic][forum-support] on the community for
 
 ![](logo.jpeg)
 
+_Thanks to [tomaae](https://github.com/tomaae) for the financial support in purchasing the device for creating this project._
+
 ## Installation
 
 ### HACS - Recommended
@@ -66,12 +68,30 @@ To use this component in your installation, add the following to your `configura
 ```yaml
 # Example configuration.yaml entry
 jq300:
-#TODO
+  - username: YOUR_EMAIL
+    password: YOUR_PASSWORD
 ```
+
+> **_Note_**:\
+> Before using the devices you need to connect them to your account through the official app.
+>
+> Only one user can be logged into an account at a time. Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
+
 
 ### Configuration variables
 
-TODO
+**username**:\
+  _(string) (Required)_\
+  The username for accessing your account.
+
+**password**:\
+  _(string) (Required)_\
+  The password for accessing your account.
+
+**devices**:\
+  _(list) (Optional)_\
+  List of names of devices to add to Home Assistant:\
+  _Default value: all available devices_
 
 ## Contributions are welcome!
 

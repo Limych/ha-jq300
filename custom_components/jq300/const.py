@@ -12,8 +12,11 @@ https://github.com/Limych/ha-jq300
 #
 
 # Base component constants
+
+from homeassistant.const import TEMP_CELSIUS
+
 DOMAIN = "jq300"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -23,6 +26,7 @@ SUPPORT_LIB_URL = "https://github.com/Limych/jq300/issues/new/choose"
 # Error strings
 MSG_GENERIC_FAIL = 'Sorry.. Something went wrong...'
 MSG_LOGIN_FAIL = 'Account name or password is wrong, please try again'
+MSG_BUSY = 'The system is busy'
 
 QUERY_TYPE_API = 'API'
 QUERY_TYPE_DEVICE = 'DEVICE'
@@ -40,3 +44,50 @@ USERAGENT_DEVICE = f"Mozilla/5.0 (Linux; {_USERAGENT_SYSTEM}; wv) " \
                    "Chrome/68.0.3440.91 Mobile Safari/537.36"
 
 QUERY_TIMEOUT = 12
+
+UNIT_MGM3 = 'mg/m³'
+UNIT_UGM3 = 'µg/m³'
+UNIT_PPM = 'ppm'
+
+SENSOR_IDS = {
+    4: [
+        'Temperature',
+        TEMP_CELSIUS,
+        'thermometer',
+        'temperature',
+    ],
+    5: [
+        'Humidity',
+        '%',
+        'water-percent',
+        'humidity',
+    ],
+    6: [
+        'PM 2.5',
+        UNIT_UGM3,
+        'air-filter',
+        None,
+    ],
+    7: [
+        'HCHO',
+        UNIT_MGM3,
+        'air-filter',
+        None,
+    ],
+    8: [
+        'TVOC',
+        UNIT_MGM3,
+        'air-filter',
+        None,
+    ],
+    9: [
+        'eCO2',
+        UNIT_PPM,
+        'molecule-co2',
+        None,
+    ],
+}
+
+ATTR_DEVICE_ID = 'device_id'
+
+UPDATE_MIN_TIME = 20  # seconds
