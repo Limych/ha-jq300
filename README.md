@@ -68,8 +68,8 @@ To use this component in your installation, add the following to your `configura
 ```yaml
 # Example configuration.yaml entry
 jq300:
-  - username: YOUR_EMAIL
-    password: YOUR_PASSWORD
+  username: YOUR_EMAIL
+  password: YOUR_PASSWORD
 ```
 
 > **_Note_**:\

@@ -11,12 +11,12 @@ https://github.com/Limych/ha-jq300
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 #
 
+from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
+    DEVICE_CLASS_HUMIDITY
+
 # Base component constants
-
-from homeassistant.const import TEMP_CELSIUS
-
 DOMAIN = "jq300"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -49,29 +49,33 @@ UNIT_MGM3 = 'mg/m³'
 UNIT_UGM3 = 'µg/m³'
 UNIT_PPM = 'ppm'
 
-SENSOR_IDS = {
+SENSORS = {
     4: [
-        'Temperature',
+        'Internal Temperature',
         TEMP_CELSIUS,
         'thermometer',
-        'temperature',
+        DEVICE_CLASS_TEMPERATURE,
+        None,
     ],
     5: [
         'Humidity',
         '%',
         'water-percent',
-        'humidity',
+        DEVICE_CLASS_HUMIDITY,
+        None,
     ],
     6: [
         'PM 2.5',
         UNIT_UGM3,
         'air-filter',
         None,
+        'pm25',
     ],
     7: [
         'HCHO',
         UNIT_MGM3,
         'air-filter',
+        None,
         None,
     ],
     8: [
@@ -79,11 +83,13 @@ SENSOR_IDS = {
         UNIT_MGM3,
         'air-filter',
         None,
+        None,
     ],
     9: [
         'eCO2',
         UNIT_PPM,
         'molecule-co2',
+        None,
         None,
     ],
 }

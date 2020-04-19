@@ -10,17 +10,18 @@ https://github.com/Limych/ha-jq300
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 #
+
 import json
 import logging
-from typing import Optional, List
+from typing import Optional
 
 import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import requests
 import voluptuous as vol
 from homeassistant.components.sensor import DOMAIN as SENSOR
-from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_NAME, \
-    CONF_DEVICES, CONF_DEVICE_ID
+from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, \
+    CONF_DEVICE_ID
 from homeassistant.helpers import discovery
 from requests import PreparedRequest
 
@@ -28,18 +29,16 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     QUERY_TYPE_API, QUERY_TYPE_DEVICE, QUERY_METHOD_GET, BASE_URL_API, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
-    SENSOR_IDS, UPDATE_MIN_TIME
+    SENSORS, UPDATE_MIN_TIME
 
 _LOGGER = logging.getLogger(__name__)
 
-ACCOUNT_SCHEMA = vol.Schema({
-    vol.Required(CONF_USERNAME): cv.string,
-    vol.Required(CONF_PASSWORD): cv.string,
-    vol.Optional(CONF_DEVICES): List[str],
-})
-
 CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.All(cv.ensure_list, [ACCOUNT_SCHEMA])
+    DOMAIN: vol.Schema({
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
+    })
 }, extra=vol.ALLOW_EXTRA)
 
 
@@ -52,32 +51,25 @@ async def async_setup(hass, config):
 
     hass.data.setdefault(DATA_JQ300, {})
 
-    for index, account_config in enumerate(config[DOMAIN]):
-        username = account_config.get(CONF_USERNAME)
-        password = account_config.get(CONF_PASSWORD)
-        devices = account_config.get(CONF_DEVICES)
+    username = config[DOMAIN].get(CONF_USERNAME)
+    password = config[DOMAIN].get(CONF_PASSWORD)
+    devices = config[DOMAIN].get(CONF_DEVICES)
 
-        if username in list(hass.data[DATA_JQ300]):
-            _LOGGER.error('Duplicate account! '
-                          'Account "%s" is already exists.', username)
-            continue
+    controller = JqController(hass, username, password)
+    hass.data[DATA_JQ300][username] = controller
+    _LOGGER.info('Connected to cloud account %s', username)
 
-        controller = JqController(hass, username, password)
-        hass.data[DATA_JQ300][username] = controller
-        _LOGGER.info('Connected to account "%s" as %s',
-                     controller.name, username)
-
-        devs = controller.get_devices_list()
-        for dev_id in devs.keys():
-            if devices and devs[dev_id]['pt_name'] not in devices:
-                continue
-            discovery.load_platform(hass, SENSOR, DOMAIN, {
-                CONF_USERNAME: username,
-                CONF_DEVICE_ID: dev_id,
-            }, config)
-
-    if not hass.data[DATA_JQ300]:
+    devs = controller.get_devices_list()
+    if not devs:
+        _LOGGER.error("Can't receive devices list from cloud.")
         return False
+    for dev_id in devs.keys():
+        if devices and devs[dev_id]['pt_name'] not in devices:
+            continue
+        discovery.load_platform(hass, SENSOR, DOMAIN, {
+            CONF_USERNAME: username,
+            CONF_DEVICE_ID: dev_id,
+        }, config)
 
     return True
 
@@ -109,7 +101,7 @@ class JqController:
     @property
     def name(self):
         """Get custom device name."""
-        return self._username
+        return 'JQ300'
 
     @property
     def available(self) -> bool:
@@ -174,7 +166,7 @@ class JqController:
 
         except Exception as err_msg:
             _LOGGER.error("Error! %s", err_msg)
-            raise err_msg
+            return None
 
         if ret.status_code == 200 or ret.status_code == 204:
             response = ret
@@ -230,6 +222,7 @@ class JqController:
 
     def get_devices_list(self, force=False) -> Optional[dict]:
         if not self._login():
+            _LOGGER.error("Can't login to cloud.")
             return None
 
         if not force and self._devices:
@@ -243,7 +236,9 @@ class JqController:
         if not ret:
             return self.get_devices_list(True) if not force else None
 
+        ts = int(dt_util.now().timestamp() * 1000)
         for dev in ret['deviceInfoBodyList']:
+            dev[''] = ts
             self._devices[dev['deviceid']] = dev
 
         self._sensors = {}
@@ -254,7 +249,7 @@ class JqController:
         ts_overdue = ts - UPDATE_MIN_TIME
 
         if not force and device_id in self._sensors \
-                and self._sensors[device_id][''] >= ts_overdue:
+            and self._sensors[device_id][''] >= ts_overdue:
             data = self._sensors[device_id].copy()
             del data['']
             return data
@@ -262,6 +257,7 @@ class JqController:
         devices = self.get_devices_list()
         _LOGGER.debug(devices)
         if not devices or not devices[device_id]:
+            _LOGGER.error("Can't receive devices list from cloud.")
             return None
 
         ret = self.query(QUERY_TYPE_DEVICE, 'list', extra_params={
@@ -275,8 +271,8 @@ class JqController:
 
         data = {}
         for sensor in ret['deviceValueVos']:
-            if sensor['seq'] in SENSOR_IDS.keys() and sensor['content'] is \
-                    not None and float(sensor['content']) > 0:
+            if sensor['seq'] in SENSORS.keys() and sensor['content'] is \
+                not None and float(sensor['content']) > 0:
                 data[sensor['seq']] = float(sensor['content'])
 
         self._sensors[device_id] = data.copy()
