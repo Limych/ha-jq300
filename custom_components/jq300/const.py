@@ -16,7 +16,7 @@ from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -95,5 +95,7 @@ SENSORS = {
 }
 
 ATTR_DEVICE_ID = 'device_id'
+ATTR_DEVICE_BRAND = "device_brand"
+ATTR_DEVICE_MODEL = "device_model"
 
 UPDATE_MIN_TIME = 20  # seconds

@@ -20,7 +20,8 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id, \
     generate_entity_id
 
 from custom_components.jq300 import JqController
-from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID
+from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID, ATTR_DEVICE_BRAND, \
+    ATTR_DEVICE_MODEL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +73,8 @@ class JqSensor(Entity):
 
         self._controller = controller  # type: JqController
         self._device_id = device['deviceid']
+        self._device_brand = device['brandname']
+        self._device_model = device['pt_model']
         self._sensor_id = sensor_id
         self._name = "{0} {1}".format(
             device['pt_name'], SENSORS.get(sensor_id)[0])
@@ -114,6 +117,8 @@ class JqSensor(Entity):
     def device_state_attributes(self):
         """Return the state attributes."""
         attrs = {
+            ATTR_DEVICE_BRAND: self._device_brand,
+            ATTR_DEVICE_MODEL: self._device_model,
             ATTR_DEVICE_ID: '{}-{}'.format(
                 self._controller.unique_id, self._device_id),
         }
