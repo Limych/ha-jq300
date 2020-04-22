@@ -1,4 +1,6 @@
-Home Assistant integration of the JQ-300/200/100 indoor air quality meter.
+**!!! Be careful! This is a BETA-version only. !!!**
+
+This component allows you to integrate JQ-300 Indoor Air Quality Meter into Home Assistant. And receive values of it sensors: TVOC (volatile organic compounds), eCO<sub>2</sub> (carbon dioxide), HCHO (formaldehyde), humidity and PM 2.5 (ultrafine particles).
 
 ![](https://github.com/Limych/ha-jq300/raw/master/logo.jpeg)
 
