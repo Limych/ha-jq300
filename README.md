@@ -132,5 +132,5 @@ creative commons Attribution-NonCommercial-ShareAlike 4.0 International License
 
 See separate [license file](LICENSE.md) for full text.
 
-[forum-support]: https://community.home-assistant.io/t/indoor-air-quality-sensor-component/160474
+[forum-support]: https://community.home-assistant.io/t/jq-300-200-100-indoor-air-quality-meter/189098
 [hacs]: https://github.com/custom-components/hacs
