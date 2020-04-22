@@ -33,10 +33,11 @@ async def async_setup_platform(hass, config, async_add_entities,
 
     account_id = discovery_info[CONF_USERNAME]
     device_id = discovery_info[CONF_DEVICE_ID]
+    _LOGGER.debug('Setup sensors for device %s', device_id)
 
     controller = hass.data[DATA_JQ300][account_id]  # type: JqController
     device = controller.get_devices_list()
-    _LOGGER.debug(device)
+    # _LOGGER.debug(device)
     if not device:
         _LOGGER.error("Can't receive devices list from cloud.")
         return
@@ -79,7 +80,7 @@ class JqSensor(Entity):
         self._name = "{0} {1}".format(
             device['pt_name'], SENSORS.get(sensor_id)[0])
         self._state = sensor_state
-        self._units = SENSORS.get(sensor_id)[1]
+        self._units = controller.units[sensor_id]
         self._icon = 'mdi:{}'.format(SENSORS.get(sensor_id)[2])
         self._unique_id = '{}-{}-{}'.format(
             self._controller.unique_id, self._device_id, sensor_id)
@@ -119,8 +120,7 @@ class JqSensor(Entity):
         attrs = {
             ATTR_DEVICE_BRAND: self._device_brand,
             ATTR_DEVICE_MODEL: self._device_model,
-            ATTR_DEVICE_ID: '{}-{}'.format(
-                self._controller.unique_id, self._device_id),
+            ATTR_DEVICE_ID: self._device_id,
         }
         return attrs
 

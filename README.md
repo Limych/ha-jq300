@@ -101,14 +101,14 @@ jq300:
   for JQ-300 only: PM 2.5.\
   _Default value: all available devices_
 
-**receive_tvoc_in_ppm**:\
+**receive_tvoc_in_ppb**:\
   _(boolean) (Optional)_\
-  By default, the cloud returns the TVOC value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
+  By default, the cloud returns the TVOC value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppb` units.\
   _Default value: False_
 
-**receive_hcho_in_ppm**:\
+**receive_hcho_in_ppb**:\
   _(boolean) (Optional)_\
-  By default, the cloud returns the HCHO (formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
+  By default, the cloud returns the HCHO (formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppb` units.\
   _Default value: False_
 
 ## Contributions are welcome!

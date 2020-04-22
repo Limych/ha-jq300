@@ -29,8 +29,8 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     QUERY_TYPE_API, QUERY_TYPE_DEVICE, QUERY_METHOD_GET, BASE_URL_API, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
-    SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPM, \
-    CONF_RECEIVE_HCHO_IN_PPM, UNIT_PPM
+    SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
+    CONF_RECEIVE_HCHO_IN_PPB, UNIT_PPM, UNIT_MGM3, UNIT_PPB
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,8 +39,8 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(CONF_RECEIVE_TVOC_IN_PPM, default=False): cv.boolean,
-        vol.Optional(CONF_RECEIVE_HCHO_IN_PPM, default=False): cv.boolean,
+        vol.Optional(CONF_RECEIVE_TVOC_IN_PPB, default=False): cv.boolean,
+        vol.Optional(CONF_RECEIVE_HCHO_IN_PPB, default=False): cv.boolean,
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -57,11 +57,11 @@ async def async_setup(hass, config):
     username = config[DOMAIN].get(CONF_USERNAME)
     password = config[DOMAIN].get(CONF_PASSWORD)
     devices = config[DOMAIN].get(CONF_DEVICES)
-    receive_tvoc_in_ppm = config[DOMAIN].get(CONF_RECEIVE_TVOC_IN_PPM)
-    receive_hcho_in_ppm = config[DOMAIN].get(CONF_RECEIVE_HCHO_IN_PPM)
+    receive_tvoc_in_ppb = config[DOMAIN].get(CONF_RECEIVE_TVOC_IN_PPB)
+    receive_hcho_in_ppb = config[DOMAIN].get(CONF_RECEIVE_HCHO_IN_PPB)
 
     controller = JqController(
-        hass, username, password, receive_tvoc_in_ppm, receive_hcho_in_ppm)
+        hass, username, password, receive_tvoc_in_ppb, receive_hcho_in_ppb)
     hass.data[DATA_JQ300][username] = controller
     _LOGGER.info('Connected to cloud account %s', username)
 
@@ -85,8 +85,8 @@ class JqController:
     """JQ device controller"""
 
     # pylint: disable=R0913
-    def __init__(self, hass, username, password, receive_tvoc_in_ppm,
-                 receive_hcho_in_ppm):
+    def __init__(self, hass, username, password, receive_tvoc_in_ppb,
+                 receive_hcho_in_ppb):
         """Initialize configured device."""
         self.hass = hass
         self.params = {
@@ -96,13 +96,21 @@ class JqController:
 
         self._username = username
         self._password = password
-        self._receive_tvoc_in_ppm = receive_tvoc_in_ppm
-        self._receive_hcho_in_ppm = receive_hcho_in_ppm
+        self._receive_tvoc_in_ppb = receive_tvoc_in_ppb
+        self._receive_hcho_in_ppb = receive_hcho_in_ppb
 
         self._available = False
         self._session = requests.session()
         self._devices = {}
         self._sensors = {}
+        self._units = {}
+
+        for sensor_id, data in SENSORS.items():
+            if (receive_tvoc_in_ppb and sensor_id == 8) \
+                    or (receive_hcho_in_ppb and sensor_id == 7):
+                self._units[sensor_id] = UNIT_PPB
+            else:
+                self._units[sensor_id] = data[1]
 
     @property
     def unique_id(self):
@@ -118,6 +126,11 @@ class JqController:
     def available(self) -> bool:
         """Return True if account is available."""
         return self._login()
+
+    @property
+    def units(self):
+        """Get list of units for sensors."""
+        return self._units
 
     @staticmethod
     def _get_useragent(query_type) -> str:
@@ -208,6 +221,7 @@ class JqController:
         elif query_type == QUERY_TYPE_DEVICE:
             if int(response['returnCode']) != 0:
                 _LOGGER.error(MSG_GENERIC_FAIL)
+                self.params['uid'] = -1000
                 return None
         else:
             raise ValueError('Unknown query type "%s"' % query_type)
@@ -266,9 +280,9 @@ class JqController:
 
         if not force and device_id in self._sensors \
                 and self._sensors[device_id][''] >= ts_overdue:
-            data = self._sensors[device_id].copy()
-            del data['']
-            return data
+            res = self._sensors[device_id].copy()
+            del res['']
+            return res
 
         devices = self.get_devices_list()
         _LOGGER.debug(devices)
@@ -285,28 +299,22 @@ class JqController:
         if not ret:
             return self.get_sensors(device_id, True) if not force else None
 
-        data = {}
+        res = {}
         for sensor in ret['deviceValueVos']:
             sensor_id = sensor['seq']
-            if sensor_id in SENSORS.keys() and sensor['content'] is \
-                    not None and float(sensor['content']) > 0:
-                data[sensor_id] = float(sensor['content'])
-                if (self._receive_tvoc_in_ppm and sensor_id == 8) \
-                        or (self._receive_hcho_in_ppm and sensor_id == 7):
-                    data[sensor_id] = int(data[sensor_id] * 224)
+            if sensor['content'] is None \
+                    or float(sensor['content']) <= 0 \
+                    or sensor_id not in SENSORS.keys():
+                continue
 
-        self._sensors[device_id] = data.copy()
+            res[sensor_id] = float(sensor['content'])
+            if sensor_id == 8 and self._receive_tvoc_in_ppb:
+                res[sensor_id] *= 310     # M = 78.9516 g/mol
+            elif sensor_id == 7 and self._receive_hcho_in_ppb:
+                res[sensor_id] *= 814     # M = 30.026 g/mol
+            if self._units[sensor_id] != UNIT_MGM3:
+                res[sensor_id] = int(res[sensor_id])
+
+        self._sensors[device_id] = res.copy()
         self._sensors[device_id][''] = tstamp
-        return data
-
-    def get_sensors_units(self):
-        """Get list of sensors units."""
-        units = {}
-        for sensor_id, data in SENSORS.values():
-            if (self._receive_tvoc_in_ppm and sensor_id == 8) \
-                    or (self._receive_hcho_in_ppm and sensor_id == 7):
-                units[sensor_id] = UNIT_PPM
-            else:
-                units[sensor_id] = data[1]
-
-        return units
+        return res

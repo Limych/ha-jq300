@@ -16,15 +16,15 @@ from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
 
 SUPPORT_LIB_URL = "https://github.com/Limych/jq300/issues/new/choose"
 
-CONF_RECEIVE_TVOC_IN_PPM = 'receive_tvoc_in_ppm'
-CONF_RECEIVE_HCHO_IN_PPM = 'receive_hcho_in_ppm'
+CONF_RECEIVE_TVOC_IN_PPB = 'receive_tvoc_in_ppb'
+CONF_RECEIVE_HCHO_IN_PPB = 'receive_hcho_in_ppb'
 
 # Error strings
 MSG_GENERIC_FAIL = 'Sorry.. Something went wrong...'
@@ -51,6 +51,7 @@ QUERY_TIMEOUT = 12
 UNIT_MGM3 = 'mg/m³'
 UNIT_UGM3 = 'µg/m³'
 UNIT_PPM = 'ppm'
+UNIT_PPB = 'ppb'
 
 SENSORS = {
     4: [
