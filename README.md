@@ -81,6 +81,23 @@ jq300:
 >
 > Only one user can be logged into an account at a time. Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
 
+We recommend using [the IAQ UK sensor](https://github.com/Limych/ha-iaquk) to evaluate overall air quality. Example configuration:
+
+```yaml
+# Example configuration.yaml entry
+jq300:
+  username: YOUR_EMAIL
+  password: YOUR_PASSWORD
+  devices: jq300
+iaquk:
+  jq300:
+    sources:
+      humidity: sensor.jq_300_humidity
+      co2: sensor.jq_300_eco2
+      tvoc: sensor.jq_300_tvoc
+      hcho: sensor.jq_300_hcho
+      pm: sensor.jq_300_pm25
+```
 
 ### Configuration variables
 
