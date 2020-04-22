@@ -92,11 +92,11 @@ jq300:
 iaquk:
   jq300:
     sources:
-      humidity: sensor.jq_300_humidity
-      co2: sensor.jq_300_eco2
-      tvoc: sensor.jq_300_tvoc
-      hcho: sensor.jq_300_hcho
-      pm: sensor.jq_300_pm25
+      humidity: sensor.jq300_humidity
+      co2: sensor.jq300_eco2
+      tvoc: sensor.jq300_tvoc
+      hcho: sensor.jq300_hcho
+      pm: sensor.jq300_pm25
 ```
 
 ### Configuration variables
