@@ -74,6 +74,8 @@ jq300:
   password: YOUR_PASSWORD
 ```
 
+![](example.png)
+
 > **_Note_**:\
 > Before using the devices you need to connect them to your account through the official app.
 >
