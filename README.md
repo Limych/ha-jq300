@@ -4,7 +4,7 @@
 
 [![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-jq300?label=release&style=popout)](https://github.com/Limych/ha-jq300/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/Limych/ha-jq300.svg?style=popout)](https://github.com/Limych/ha-jq300/commits/master)
-[![License](https://img.shields.io/github/license/Limych/ha-jq300.svg?style=popout)](LICENSE.md)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?style=popout)](LICENSE.md)
 ![Requires.io](https://img.shields.io/requires/github/Limych/ha-jq300)
 
 [![hacs](https://img.shields.io/badge/HACS-Default-orange.svg?style=popout)][hacs]
@@ -15,7 +15,7 @@
 
 [![Community Forum](https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout)][forum-support]
 
-This component allows you to
+This component allows you to integrate JQ-300 Indoor Air Quality Meter into Home Assistant. And receive values of it sensors: TVOC (volatile organic compounds), eCO<sub>2</sub> (carbon dioxide), HCHO (formaldehyde), humidity and PM 2.5 (ultrafine particles).
 
 I also suggest you [visit the support topic][forum-support] on the community forum.
 
@@ -104,7 +104,7 @@ jq300:
 
 **receive_hcho_in_ppm**:\
   _(boolean) (Optional)_\
-  By default, the cloud returns the HCHO (Formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
+  By default, the cloud returns the HCHO (formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
   _Default value: False_
 
 ## Contributions are welcome!
