@@ -1,5 +1,7 @@
 *Please :star: this repo if you find it useful*
 
+**!!! Be careful! This is a BETA-version only. !!!**
+
 # Home Assistant Integration of JQ-300/200/100 Indoor Air Quality Meter
 
 [![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-jq300?label=release&style=popout)](https://github.com/Limych/ha-jq300/releases)
