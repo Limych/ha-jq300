@@ -90,8 +90,22 @@ jq300:
 
 **devices**:\
   _(list) (Optional)_\
-  List of names of devices to add to Home Assistant:\
+  List of names of devices to add to Home Assistant.\
+  For each device, all sensors are created, which are possible:\
+  for all devices: TVOC, HCHO (Formaldehyde) and eCO<sub>2</sub>;\
+  for JQ-200 and JQ-300 only: internal temperature and humidity;\
+  for JQ-300 only: PM 2.5.\
   _Default value: all available devices_
+
+**receive_tvoc_in_ppm**:\
+  _(boolean) (Optional)_\
+  By default, the cloud returns the TVOC value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
+  _Default value: False_
+
+**receive_hcho_in_ppm**:\
+  _(boolean) (Optional)_\
+  By default, the cloud returns the HCHO (Formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppm` units.\
+  _Default value: False_
 
 ## Contributions are welcome!
 

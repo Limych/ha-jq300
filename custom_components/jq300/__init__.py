@@ -29,7 +29,8 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     QUERY_TYPE_API, QUERY_TYPE_DEVICE, QUERY_METHOD_GET, BASE_URL_API, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
-    SENSORS, UPDATE_MIN_TIME
+    SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPM, \
+    CONF_RECEIVE_HCHO_IN_PPM, UNIT_PPM
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +39,8 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(CONF_RECEIVE_TVOC_IN_PPM, default=False): cv.boolean,
+        vol.Optional(CONF_RECEIVE_HCHO_IN_PPM, default=False): cv.boolean,
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -54,8 +57,11 @@ async def async_setup(hass, config):
     username = config[DOMAIN].get(CONF_USERNAME)
     password = config[DOMAIN].get(CONF_PASSWORD)
     devices = config[DOMAIN].get(CONF_DEVICES)
+    receive_tvoc_in_ppm = config[DOMAIN].get(CONF_RECEIVE_TVOC_IN_PPM)
+    receive_hcho_in_ppm = config[DOMAIN].get(CONF_RECEIVE_HCHO_IN_PPM)
 
-    controller = JqController(hass, username, password)
+    controller = JqController(
+        hass, username, password, receive_tvoc_in_ppm, receive_hcho_in_ppm)
     hass.data[DATA_JQ300][username] = controller
     _LOGGER.info('Connected to cloud account %s', username)
 
@@ -74,10 +80,13 @@ async def async_setup(hass, config):
     return True
 
 
+# pylint: disable=R0902
 class JqController:
     """JQ device controller"""
 
-    def __init__(self, hass, username, password):
+    # pylint: disable=R0913
+    def __init__(self, hass, username, password, receive_tvoc_in_ppm,
+                 receive_hcho_in_ppm):
         """Initialize configured device."""
         self.hass = hass
         self.params = {
@@ -87,6 +96,8 @@ class JqController:
 
         self._username = username
         self._password = password
+        self._receive_tvoc_in_ppm = receive_tvoc_in_ppm
+        self._receive_hcho_in_ppm = receive_hcho_in_ppm
 
         self._available = False
         self._session = requests.session()
@@ -111,12 +122,13 @@ class JqController:
     @staticmethod
     def _get_useragent(query_type) -> str:
         """Generate User-Agent for requests"""
+        # pylint: disable=R1705
         if query_type == QUERY_TYPE_API:
             return USERAGENT_API
         elif query_type == QUERY_TYPE_DEVICE:
             return USERAGENT_DEVICE
-
-        raise ValueError('Unknown query type "%s"' % query_type)
+        else:
+            raise ValueError('Unknown query type "%s"' % query_type)
 
     def _add_url_params(self, url: str, extra_params: dict) -> str:
         """Add params to URL."""
@@ -141,6 +153,7 @@ class JqController:
             url = self._add_url_params(url, extra_params)
         return url
 
+    # pylint: disable=R0911,R0912
     def query(self, query_type, function: str,
               extra_params=None) -> Optional[dict]:
         """Query data from cloud."""
@@ -164,6 +177,7 @@ class JqController:
             }, timeout=QUERY_TIMEOUT)
             _LOGGER.debug("_query ret %s", ret.status_code)
 
+        # pylint: disable=W0703
         except Exception as err_msg:
             _LOGGER.error("Error! %s", err_msg)
             return None
@@ -221,6 +235,7 @@ class JqController:
         return True
 
     def get_devices_list(self, force=False) -> Optional[dict]:
+        """Get list of available devices."""
         if not self._login():
             _LOGGER.error("Can't login to cloud.")
             return None
@@ -236,20 +251,21 @@ class JqController:
         if not ret:
             return self.get_devices_list(True) if not force else None
 
-        ts = int(dt_util.now().timestamp() * 1000)
+        tstamp = int(dt_util.now().timestamp() * 1000)
         for dev in ret['deviceInfoBodyList']:
-            dev[''] = ts
+            dev[''] = tstamp
             self._devices[dev['deviceid']] = dev
 
         self._sensors = {}
         return self._devices
 
     def get_sensors(self, device_id, force=False) -> Optional[dict]:
-        ts = int(dt_util.now().timestamp() * 1000)
-        ts_overdue = ts - UPDATE_MIN_TIME
+        """Get list of available sensors for device."""
+        tstamp = int(dt_util.now().timestamp() * 1000)
+        ts_overdue = tstamp - UPDATE_MIN_TIME
 
         if not force and device_id in self._sensors \
-            and self._sensors[device_id][''] >= ts_overdue:
+                and self._sensors[device_id][''] >= ts_overdue:
             data = self._sensors[device_id].copy()
             del data['']
             return data
@@ -262,19 +278,35 @@ class JqController:
 
         ret = self.query(QUERY_TYPE_DEVICE, 'list', extra_params={
             'deviceToken': devices[device_id]['deviceToken'],
-            'timestamp': ts,
+            'timestamp': tstamp,
             'callback': 'jsoncallback',
-            '_': ts,
+            '_': tstamp,
         })
         if not ret:
             return self.get_sensors(device_id, True) if not force else None
 
         data = {}
         for sensor in ret['deviceValueVos']:
-            if sensor['seq'] in SENSORS.keys() and sensor['content'] is \
-                not None and float(sensor['content']) > 0:
-                data[sensor['seq']] = float(sensor['content'])
+            sensor_id = sensor['seq']
+            if sensor_id in SENSORS.keys() and sensor['content'] is \
+                    not None and float(sensor['content']) > 0:
+                data[sensor_id] = float(sensor['content'])
+                if (self._receive_tvoc_in_ppm and sensor_id == 8) \
+                        or (self._receive_hcho_in_ppm and sensor_id == 7):
+                    data[sensor_id] = int(data[sensor_id] * 224)
 
         self._sensors[device_id] = data.copy()
-        self._sensors[device_id][''] = ts
+        self._sensors[device_id][''] = tstamp
         return data
+
+    def get_sensors_units(self):
+        """Get list of sensors units."""
+        units = {}
+        for sensor_id, data in SENSORS.values():
+            if (self._receive_tvoc_in_ppm and sensor_id == 8) \
+                    or (self._receive_hcho_in_ppm and sensor_id == 7):
+                units[sensor_id] = UNIT_PPM
+            else:
+                units[sensor_id] = data[1]
+
+        return units

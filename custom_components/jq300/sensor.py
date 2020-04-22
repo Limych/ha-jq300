@@ -12,12 +12,10 @@ https://github.com/Limych/ha-jq300
 #
 
 import logging
-import re
 
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.const import CONF_USERNAME, CONF_DEVICE_ID
-from homeassistant.helpers.entity import Entity, async_generate_entity_id, \
-    generate_entity_id
+from homeassistant.helpers.entity import Entity, async_generate_entity_id
 
 from custom_components.jq300 import JqController
 from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID, ATTR_DEVICE_BRAND, \
@@ -63,9 +61,11 @@ async def async_setup_platform(hass, config, async_add_entities,
     async_add_entities(sensors)
 
 
+# pylint: disable=R0902
 class JqSensor(Entity):
     """A sensor implementation for JQ device"""
 
+    # pylint: disable=R0913
     def __init__(self, hass, controller, device, sensor_id, sensor_state,
                  entity_id):
         """Initialize a sensor"""
