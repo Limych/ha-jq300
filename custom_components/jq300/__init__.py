@@ -21,7 +21,8 @@ import requests
 import voluptuous as vol
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, \
-    CONF_DEVICE_ID
+    CONF_DEVICE_ID, CONCENTRATION_PARTS_PER_BILLION, \
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER
 from homeassistant.helpers import discovery
 from requests import PreparedRequest
 
@@ -30,7 +31,7 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
     SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
-    CONF_RECEIVE_HCHO_IN_PPB, UNIT_PPM, UNIT_MGM3, UNIT_PPB
+    CONF_RECEIVE_HCHO_IN_PPB
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class JqController:
         for sensor_id, data in SENSORS.items():
             if (receive_tvoc_in_ppb and sensor_id == 8) \
                     or (receive_hcho_in_ppb and sensor_id == 7):
-                self._units[sensor_id] = UNIT_PPB
+                self._units[sensor_id] = CONCENTRATION_PARTS_PER_BILLION
             else:
                 self._units[sensor_id] = data[1]
 
@@ -309,10 +310,11 @@ class JqController:
 
             res[sensor_id] = float(sensor['content'])
             if sensor_id == 8 and self._receive_tvoc_in_ppb:
-                res[sensor_id] *= 310     # M = 78.9516 g/mol
+                res[sensor_id] *= 310     # M(TVOC) = 78.9516 g/mol
             elif sensor_id == 7 and self._receive_hcho_in_ppb:
-                res[sensor_id] *= 814     # M = 30.026 g/mol
-            if self._units[sensor_id] != UNIT_MGM3:
+                res[sensor_id] *= 814     # M(HCHO) = 30.026 g/mol
+            if self._units[sensor_id] != \
+                    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER:
                 res[sensor_id] = int(res[sensor_id])
 
         self._sensors[device_id] = res.copy()

@@ -81,7 +81,7 @@ class JqSensor(Entity):
             device['pt_name'], SENSORS.get(sensor_id)[0])
         self._state = sensor_state
         self._units = controller.units[sensor_id]
-        self._icon = 'mdi:{}'.format(SENSORS.get(sensor_id)[2])
+        self._icon = SENSORS.get(sensor_id)[2]
         self._unique_id = '{}-{}-{}'.format(
             self._controller.unique_id, self._device_id, sensor_id)
         self._device_class = SENSORS.get(sensor_id)[3]

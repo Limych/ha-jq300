@@ -12,11 +12,13 @@ https://github.com/Limych/ha-jq300
 #
 
 from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
-    DEVICE_CLASS_HUMIDITY
+    DEVICE_CLASS_HUMIDITY, UNIT_PERCENTAGE, \
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER, \
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, CONCENTRATION_PARTS_PER_MILLION
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -48,51 +50,46 @@ USERAGENT_DEVICE = f"Mozilla/5.0 (Linux; {_USERAGENT_SYSTEM}; wv) " \
 
 QUERY_TIMEOUT = 12
 
-UNIT_MGM3 = 'mg/m³'
-UNIT_UGM3 = 'µg/m³'
-UNIT_PPM = 'ppm'
-UNIT_PPB = 'ppb'
-
 SENSORS = {
     4: [
         'Internal Temperature',
         TEMP_CELSIUS,
-        'thermometer',
+        'mdi:thermometer',
         DEVICE_CLASS_TEMPERATURE,
         None,
     ],
     5: [
         'Humidity',
-        '%',
-        'water-percent',
+        UNIT_PERCENTAGE,
+        'mdi:water-percent',
         DEVICE_CLASS_HUMIDITY,
         None,
     ],
     6: [
         'PM 2.5',
-        UNIT_UGM3,
-        'air-filter',
+        CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        'mdi:air-filter',
         None,
         'pm25',
     ],
     7: [
         'HCHO',
-        UNIT_MGM3,
-        'air-filter',
+        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+        'mdi:cloud',
         None,
         None,
     ],
     8: [
         'TVOC',
-        UNIT_MGM3,
-        'air-filter',
+        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+        'mdi:cloud',
         None,
         None,
     ],
     9: [
         'eCO2',
-        UNIT_PPM,
-        'molecule-co2',
+        CONCENTRATION_PARTS_PER_MILLION,
+        'mdi:periodic-table-co2',
         None,
         None,
     ],
