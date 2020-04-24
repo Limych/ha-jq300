@@ -31,7 +31,7 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
     SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
-    CONF_RECEIVE_HCHO_IN_PPB
+    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def async_setup(hass, config):
     receive_hcho_in_ppb = config[DOMAIN].get(CONF_RECEIVE_HCHO_IN_PPB)
 
     controller = JqController(
-        hass, username, password, receive_tvoc_in_ppb, receive_hcho_in_ppb)
+        username, password, receive_tvoc_in_ppb, receive_hcho_in_ppb)
     hass.data[DATA_JQ300][username] = controller
     _LOGGER.info('Connected to cloud account %s', username)
 
@@ -86,10 +86,9 @@ class JqController:
     """JQ device controller"""
 
     # pylint: disable=R0913
-    def __init__(self, hass, username, password, receive_tvoc_in_ppb,
-                 receive_hcho_in_ppb):
+    def __init__(self, username, password, receive_tvoc_in_ppb=False,
+                 receive_hcho_in_ppb=False):
         """Initialize configured device."""
-        self.hass = hass
         self.params = {
             'uid': -1000,
             'safeToken': 'anonymous',
@@ -271,34 +270,25 @@ class JqController:
             dev[''] = tstamp
             self._devices[dev['deviceid']] = dev
 
-        self._sensors = {}
         return self._devices
 
-    def get_sensors(self, device_id, force=False) -> Optional[dict]:
-        """Get list of available sensors for device."""
-        tstamp = int(dt_util.now().timestamp() * 1000)
-        ts_overdue = tstamp - UPDATE_MIN_TIME
-
-        if not force and device_id in self._sensors \
-                and self._sensors[device_id][''] >= ts_overdue:
-            res = self._sensors[device_id].copy()
-            del res['']
-            return res
-
+    def _fetch_sensors(self, device_id, ts_now, force=False) -> bool:
+        """Fetch states of available sensors for device."""
         devices = self.get_devices_list()
         _LOGGER.debug(devices)
         if not devices or not devices[device_id]:
             _LOGGER.error("Can't receive devices list from cloud.")
-            return None
+            return False
 
         ret = self.query(QUERY_TYPE_DEVICE, 'list', extra_params={
             'deviceToken': devices[device_id]['deviceToken'],
-            'timestamp': tstamp,
+            'timestamp': ts_now,
             'callback': 'jsoncallback',
-            '_': tstamp,
+            '_': ts_now,
         })
         if not ret:
-            return self.get_sensors(device_id, True) if not force else None
+            return self._fetch_sensors(device_id, ts_now, True) \
+                if not force else False
 
         res = {}
         for sensor in ret['deviceValueVos']:
@@ -317,6 +307,34 @@ class JqController:
                     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER:
                 res[sensor_id] = int(res[sensor_id])
 
-        self._sensors[device_id] = res.copy()
-        self._sensors[device_id][''] = tstamp
+        self._sensors[device_id][ts_now] = res
+        return True
+
+    def get_sensors(self, device_id) -> Optional[dict]:
+        """Get states of available sensors for device."""
+        ts_now = int(dt_util.now().timestamp())
+
+        self._sensors.setdefault(device_id, {})
+
+        res = {}
+        for key, val in self._sensors[device_id].items():
+            if key >= ts_now - SENSORS_FILTER_TIME:
+                res[key] = val
+        self._sensors[device_id] = res
+
+        if (not res or max(res) < ts_now - UPDATE_MIN_TIME) \
+                and not self._fetch_sensors(device_id, ts_now):
+            return None
+
+        res = {}
+        for data in self._sensors[device_id].values():
+            for sensor_id, val in data.items():
+                res.setdefault(sensor_id, 0)
+                res[sensor_id] += val
+        length = len(self._sensors[device_id])
+        for sensor_id in res:
+            res[sensor_id] = round(
+                res[sensor_id] / length,
+                0 if isinstance(res[sensor_id], int) else 3
+            )
         return res
