@@ -103,6 +103,7 @@ class JqController:
         self._session = requests.session()
         self._devices = {}
         self._sensors = {}
+        self._sensors_raw = {}
         self._units = {}
 
         for sensor_id, data in SENSORS.items():
@@ -308,6 +309,7 @@ class JqController:
                 res[sensor_id] = int(res[sensor_id])
 
         self._sensors[device_id][ts_now] = res
+        self._sensors_raw[device_id] = res
         return True
 
     def get_sensors(self, device_id) -> Optional[dict]:
@@ -338,3 +340,7 @@ class JqController:
                 0 if isinstance(res[sensor_id], int) else 3
             )
         return res
+
+    def get_sensors_raw(self, device_id) -> Optional[dict]:
+        """Get raw values of states of available sensors for device."""
+        return self._sensors_raw.get(device_id)

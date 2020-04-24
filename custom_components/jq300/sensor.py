@@ -19,7 +19,7 @@ from homeassistant.helpers.entity import Entity, async_generate_entity_id
 
 from custom_components.jq300 import JqController
 from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID, ATTR_DEVICE_BRAND, \
-    ATTR_DEVICE_MODEL
+    ATTR_DEVICE_MODEL, ATTR_RAW_STATE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,6 +80,7 @@ class JqSensor(Entity):
         self._name = "{0} {1}".format(
             device['pt_name'], SENSORS.get(sensor_id)[0])
         self._state = sensor_state
+        self._state_raw = sensor_state
         self._units = controller.units[sensor_id]
         self._icon = SENSORS.get(sensor_id)[2]
         self._unique_id = '{}-{}-{}'.format(
@@ -121,6 +122,7 @@ class JqSensor(Entity):
             ATTR_DEVICE_BRAND: self._device_brand,
             ATTR_DEVICE_MODEL: self._device_model,
             ATTR_DEVICE_ID: self._device_id,
+            ATTR_RAW_STATE: self._state_raw,
         }
         return attrs
 
@@ -144,4 +146,7 @@ class JqSensor(Entity):
         ret = self._controller.get_sensors(self._device_id)
         if ret:
             self._state = ret[self._sensor_id]
-            _LOGGER.debug('Update state: %s = %s', self.entity_id, self._state)
+            self._state_raw = self._controller.get_sensors_raw(
+                self._device_id)[self._sensor_id]
+            _LOGGER.debug('Update state: %s = %s (%s)', self.entity_id,
+                          self._state, self._state_raw)
