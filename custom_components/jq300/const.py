@@ -82,7 +82,7 @@ SENSORS = {
     8: [
         'TVOC',
         CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
-        'mdi:cloud',
+        'mdi:radiator',
         None,
         None,
     ],
@@ -101,4 +101,7 @@ ATTR_DEVICE_MODEL = "device_model"
 ATTR_RAW_STATE = 'raw_state'
 
 UPDATE_MIN_TIME = 20  # seconds
-SENSORS_FILTER_TIME = 900  # seconds
+SENSORS_FILTER_TIME = 600  # seconds
+
+MWEIGTH_TVOC = 56.1060      # g/mol
+MWEIGTH_HCHO = 30.0260      # g/mol

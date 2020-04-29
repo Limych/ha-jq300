@@ -22,7 +22,7 @@ import voluptuous as vol
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, \
     CONF_DEVICE_ID, CONCENTRATION_PARTS_PER_BILLION, \
-    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, CONCENTRATION_PARTS_PER_MILLION
 from homeassistant.helpers import discovery
 from requests import PreparedRequest
 
@@ -31,7 +31,7 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
     SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
-    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME
+    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME, MWEIGTH_TVOC, MWEIGTH_HCHO
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -295,15 +295,14 @@ class JqController:
         for sensor in ret['deviceValueVos']:
             sensor_id = sensor['seq']
             if sensor['content'] is None \
-                    or float(sensor['content']) <= 0 \
                     or sensor_id not in SENSORS.keys():
                 continue
 
             res[sensor_id] = float(sensor['content'])
             if sensor_id == 8 and self._receive_tvoc_in_ppb:
-                res[sensor_id] *= 310     # M(TVOC) = 78.9516 g/mol
+                res[sensor_id] *= 1000 * 24.45 / MWEIGTH_TVOC
             elif sensor_id == 7 and self._receive_hcho_in_ppb:
-                res[sensor_id] *= 814     # M(HCHO) = 30.026 g/mol
+                res[sensor_id] *= 1000 * 24.45 / MWEIGTH_HCHO
             if self._units[sensor_id] != \
                     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER:
                 res[sensor_id] = int(res[sensor_id])
@@ -315,30 +314,65 @@ class JqController:
     def get_sensors(self, device_id) -> Optional[dict]:
         """Get states of available sensors for device."""
         ts_now = int(dt_util.now().timestamp())
+        ts_overdue = ts_now - SENSORS_FILTER_TIME
 
         self._sensors.setdefault(device_id, {})
 
+        # Filter historic states
         res = {}
-        for key, val in self._sensors[device_id].items():
-            if key >= ts_now - SENSORS_FILTER_TIME:
-                res[key] = val
+        ts_min = max(list(filter(
+            lambda x: x <= ts_overdue,
+            self._sensors[device_id].keys()
+        )) or {ts_overdue})
+        # _LOGGER.debug('ts_overdue: %s; ts_min: %s', ts_overdue, ts_min)
+        for m_ts, val in self._sensors[device_id].items():
+            if m_ts >= ts_min:
+                res[m_ts] = val
         self._sensors[device_id] = res
 
         if (not res or max(res) < ts_now - UPDATE_MIN_TIME) \
                 and not self._fetch_sensors(device_id, ts_now):
             return None
 
+        # Calculate average state values
         res = {}
-        for data in self._sensors[device_id].values():
-            for sensor_id, val in data.items():
-                res.setdefault(sensor_id, 0)
-                res[sensor_id] += val
-        length = len(self._sensors[device_id])
+        last_ts = ts_overdue
+        last_data = {}
+        for sensor_id in self._sensors_raw[device_id]:
+            res.setdefault(sensor_id, 0)
+            last_data.setdefault(sensor_id, 0)
+        # Sum values
+        for m_ts, data in self._sensors[device_id].items():
+            val_t = m_ts - last_ts
+            if val_t > 0 is not None:
+                # _LOGGER.debug('%s: %s [%s]', m_ts, data, (m_ts - last_ts))
+                for sensor_id, val in last_data.items():
+                    res[sensor_id] += val * val_t
+            last_ts = max(m_ts, ts_overdue)
+            last_data = data
+        # Add last values
+        # _LOGGER.debug('%s: %s [%s]', last_ts, last_data,
+        #               max(ts_now - last_ts, 1))
+        val_t = ts_now - last_ts + 1
+        for sensor_id, val in last_data.items():
+            res[sensor_id] += val * val_t
+        # Average and round
+        length = max(
+            1,
+            ts_now - max(min(self._sensors[device_id].keys()), ts_overdue) + 1
+        )
+        # _LOGGER.debug('Averaging: %s / %s', res, length)
         for sensor_id in res:
-            res[sensor_id] = round(
+            res[sensor_id] = int(
+                res[sensor_id] / length
+            ) if self._units[sensor_id] in (
+                CONCENTRATION_PARTS_PER_MILLION,
+                CONCENTRATION_PARTS_PER_BILLION,
+            ) else round(
                 res[sensor_id] / length,
-                0 if isinstance(res[sensor_id], int) else 3
+                1 if isinstance(res[sensor_id], int) else 3
             )
+        # _LOGGER.debug('Result: %s', res)
         return res
 
     def get_sensors_raw(self, device_id) -> Optional[dict]:

@@ -17,14 +17,14 @@ from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.const import CONF_USERNAME, CONF_DEVICE_ID
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 
-from custom_components.jq300 import JqController
+from . import JqController
 from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID, ATTR_DEVICE_BRAND, \
     ATTR_DEVICE_MODEL, ATTR_RAW_STATE
 
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=w0613
+# pylint: disable=W0613
 async def async_setup_platform(hass, config, async_add_entities,
                                discovery_info=None):
     """Set up a sensors to integrate JQ-300."""
@@ -44,7 +44,7 @@ async def async_setup_platform(hass, config, async_add_entities,
     device = device[device_id]
     dev_name = device['pt_name']
     sensors_data = controller.get_sensors(device_id)
-    _LOGGER.debug(sensors_data)
+    # _LOGGER.debug(sensors_data)
     if not sensors_data:
         _LOGGER.error("Can't receive sensors list for device '%s' from cloud.",
                       device['pt_name'])
@@ -66,7 +66,7 @@ async def async_setup_platform(hass, config, async_add_entities,
 class JqSensor(Entity):
     """A sensor implementation for JQ device"""
 
-    # pylint: disable=R0913
+    # pylint: disable=R0913,W0613
     def __init__(self, hass, controller, device, sensor_id, sensor_state,
                  entity_id):
         """Initialize a sensor"""
