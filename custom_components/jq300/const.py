@@ -10,7 +10,7 @@ https://github.com/Limych/ha-jq300
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 #
-
+from homeassistant.components.binary_sensor import DEVICE_CLASS_PROBLEM
 from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
     DEVICE_CLASS_HUMIDITY, UNIT_PERCENTAGE, \
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER, \
@@ -18,7 +18,7 @@ from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.3"
+VERSION = "0.7.5"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -49,6 +49,16 @@ USERAGENT_DEVICE = f"Mozilla/5.0 (Linux; {_USERAGENT_SYSTEM}; wv) " \
                    "Chrome/68.0.3440.91 Mobile Safari/537.36"
 
 QUERY_TIMEOUT = 12
+
+BINARY_SENSORS = {
+    1: [
+        'Air Quality Alert',
+        None,
+        'mdi:alert',
+        DEVICE_CLASS_PROBLEM,
+        None,
+    ],
+}
 
 SENSORS = {
     4: [

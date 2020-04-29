@@ -1,11 +1,12 @@
 {
     "jq300": {
-        "version": "0.7.3",
+        "version": "0.7.5",
         "local_location": "/custom_components/jq300/__init__.py",
         "remote_location": "https://raw.githubusercontent.com/Limych/ha-jq300/master/custom_components/jq300/__init__.py",
         "visit_repo": "https://github.com/Limych/ha-jq300",
         "changelog": "https://github.com/Limych/ha-jq300/releases/latest",
         "resources": [
+            "https://raw.githubusercontent.com/Limych/ha-jq300/master/custom_components/jq300/binary_sensor.py",
             "https://raw.githubusercontent.com/Limych/ha-jq300/master/custom_components/jq300/const.py",
             "https://raw.githubusercontent.com/Limych/ha-jq300/master/custom_components/jq300/manifest.json",
             "https://raw.githubusercontent.com/Limych/ha-jq300/master/custom_components/jq300/sensor.py"

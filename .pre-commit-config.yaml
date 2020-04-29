@@ -7,7 +7,7 @@ repos:
         language: system
       - id: pylint
         name: pylint
-        entry: python3 -m pylint.__main__
+        entry: python3 -m pylint.__main__ -d R0801
         language: system
         types: [python]
   - repo: https://github.com/pre-commit/pre-commit-hooks

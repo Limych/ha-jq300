@@ -20,6 +20,7 @@ import homeassistant.util.dt as dt_util
 import requests
 import voluptuous as vol
 from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, \
     CONF_DEVICE_ID, CONCENTRATION_PARTS_PER_BILLION, \
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, CONCENTRATION_PARTS_PER_MILLION
@@ -31,7 +32,9 @@ from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
     BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
     MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
     SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
-    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME, MWEIGTH_TVOC, MWEIGTH_HCHO
+    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME, MWEIGTH_TVOC, MWEIGTH_HCHO, \
+    ATTR_DEVICE_BRAND, ATTR_DEVICE_MODEL, ATTR_DEVICE_ID, ATTR_RAW_STATE, \
+    BINARY_SENSORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,10 +76,16 @@ async def async_setup(hass, config):
     for dev_id in devs.keys():
         if devices and devs[dev_id]['pt_name'] not in devices:
             continue
-        discovery.load_platform(hass, SENSOR, DOMAIN, {
-            CONF_USERNAME: username,
-            CONF_DEVICE_ID: dev_id,
-        }, config)
+        hass.async_create_task(
+            discovery.async_load_platform(hass, BINARY_SENSOR, DOMAIN, {
+                CONF_USERNAME: username,
+                CONF_DEVICE_ID: dev_id,
+            }, config))
+        hass.async_create_task(
+            discovery.async_load_platform(hass, SENSOR, DOMAIN, {
+                CONF_USERNAME: username,
+                CONF_DEVICE_ID: dev_id,
+            }, config))
 
     return True
 
@@ -106,6 +115,8 @@ class JqController:
         self._sensors_raw = {}
         self._units = {}
 
+        for sensor_id, data in BINARY_SENSORS.items():
+            self._units[sensor_id] = data[1]
         for sensor_id, data in SENSORS.items():
             if (receive_tvoc_in_ppb and sensor_id == 8) \
                     or (receive_hcho_in_ppb and sensor_id == 7):
@@ -295,7 +306,8 @@ class JqController:
         for sensor in ret['deviceValueVos']:
             sensor_id = sensor['seq']
             if sensor['content'] is None \
-                    or sensor_id not in SENSORS.keys():
+                    or (sensor_id not in SENSORS.keys()
+                            and sensor_id not in BINARY_SENSORS.keys()):
                 continue
 
             res[sensor_id] = float(sensor['content'])
@@ -344,7 +356,7 @@ class JqController:
         # Sum values
         for m_ts, data in self._sensors[device_id].items():
             val_t = m_ts - last_ts
-            if val_t > 0 is not None:
+            if val_t > 0:
                 # _LOGGER.debug('%s: %s [%s]', m_ts, data, (m_ts - last_ts))
                 for sensor_id, val in last_data.items():
                     res[sensor_id] += val * val_t
@@ -363,15 +375,17 @@ class JqController:
         )
         # _LOGGER.debug('Averaging: %s / %s', res, length)
         for sensor_id in res:
-            res[sensor_id] = int(
-                res[sensor_id] / length
-            ) if self._units[sensor_id] in (
-                CONCENTRATION_PARTS_PER_MILLION,
-                CONCENTRATION_PARTS_PER_BILLION,
-            ) else round(
-                res[sensor_id] / length,
-                1 if isinstance(res[sensor_id], int) else 3
-            )
+            res[sensor_id] = self._sensors_raw[device_id][1] \
+                if sensor_id == 1 \
+                else int(
+                    res[sensor_id] / length
+                ) if self._units[sensor_id] in (
+                    CONCENTRATION_PARTS_PER_MILLION,
+                    CONCENTRATION_PARTS_PER_BILLION,
+                ) else round(
+                    res[sensor_id] / length,
+                    1 if isinstance(res[sensor_id], int) else 3
+                )
         # _LOGGER.debug('Result: %s', res)
         return res
 

@@ -10,16 +10,18 @@ https://github.com/Limych/ha-jq300
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 #
-
 import logging
 
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
-from homeassistant.const import CONF_USERNAME, CONF_DEVICE_ID
-from homeassistant.helpers.entity import Entity, async_generate_entity_id
+from homeassistant.components.binary_sensor import BinarySensorDevice, \
+    ENTITY_ID_FORMAT
+from homeassistant.const import (
+    CONF_USERNAME,
+    CONF_DEVICE_ID)
+from homeassistant.helpers.entity import async_generate_entity_id
 
-from . import JqController
-from .const import DATA_JQ300, SENSORS, ATTR_DEVICE_ID, ATTR_DEVICE_BRAND, \
-    ATTR_DEVICE_MODEL, ATTR_RAW_STATE
+from . import DATA_JQ300
+from .const import BINARY_SENSORS, ATTR_DEVICE_BRAND, ATTR_DEVICE_MODEL, \
+    ATTR_DEVICE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,13 +29,13 @@ _LOGGER = logging.getLogger(__name__)
 # pylint: disable=W0613
 async def async_setup_platform(hass, config, async_add_entities,
                                discovery_info=None):
-    """Set up a sensors to integrate JQ-300."""
+    """Set up a binary sensors to integrate JQ-300."""
     if discovery_info is None:
         return
 
     account_id = discovery_info[CONF_USERNAME]
     device_id = discovery_info[CONF_DEVICE_ID]
-    _LOGGER.debug('Setup sensors for device %s', device_id)
+    _LOGGER.debug('Setup binary sensors for device %s', device_id)
 
     controller = hass.data[DATA_JQ300][account_id]  # type: JqController
     device = controller.get_devices_list()
@@ -50,23 +52,20 @@ async def async_setup_platform(hass, config, async_add_entities,
                       device['pt_name'])
         return
 
-    sensors = []
-    for sensor_id, sensor_state in sensors_data.items():
-        if sensor_id not in SENSORS.keys():
-            continue
-        ent_name = SENSORS.get(sensor_id)[4] or SENSORS.get(sensor_id)[0]
-        entity_id = async_generate_entity_id(
-            ENTITY_ID_FORMAT, f"{dev_name}_{ent_name}", hass=hass)
-        _LOGGER.debug("Initialize %s for account %s", entity_id, account_id)
-        sensors.append(JqSensor(
-            hass, controller, device, sensor_id, sensor_state, entity_id))
-
-    async_add_entities(sensors)
+    sensor_id = 1
+    ent_name = BINARY_SENSORS.get(sensor_id)[4] \
+        or BINARY_SENSORS.get(sensor_id)[0]
+    entity_id = async_generate_entity_id(
+        ENTITY_ID_FORMAT, f"{dev_name}_{ent_name}", hass=hass)
+    _LOGGER.debug("Initialize %s for account %s", entity_id, account_id)
+    async_add_entities([JqBinarySensor(
+        hass, controller, device, sensor_id, sensors_data[sensor_id],
+        entity_id)])
 
 
 # pylint: disable=R0902
-class JqSensor(Entity):
-    """A sensor implementation for JQ device"""
+class JqBinarySensor(BinarySensorDevice):
+    """A binary sensor implementation for JQ device"""
 
     # pylint: disable=R0913,W0613
     def __init__(self, hass, controller, device, sensor_id, sensor_state,
@@ -80,20 +79,19 @@ class JqSensor(Entity):
         self._device_model = device['pt_model']
         self._sensor_id = sensor_id
         self._name = "{0} {1}".format(
-            device['pt_name'], SENSORS.get(sensor_id)[0])
+            device['pt_name'], BINARY_SENSORS.get(sensor_id)[0])
         self._state = sensor_state
-        self._state_raw = sensor_state
         self._units = controller.units[sensor_id]
-        self._icon = SENSORS.get(sensor_id)[2]
+        self._icon = BINARY_SENSORS.get(sensor_id)[2]
         self._unique_id = '{}-{}-{}'.format(
             self._controller.unique_id, self._device_id, sensor_id)
-        self._device_class = SENSORS.get(sensor_id)[3]
+        self._device_class = BINARY_SENSORS.get(sensor_id)[3]
 
         self.entity_id = entity_id
 
     @property
     def name(self):
-        """Return the name of the sensor."""
+        """Return the name of the binary sensor."""
         return self._name
 
     @property
@@ -102,9 +100,9 @@ class JqSensor(Entity):
         return self._controller.available
 
     @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._state
+    def is_on(self):
+        """Return true if the binary sensor is on."""
+        return bool(self._state)
 
     @property
     def unique_id(self):
@@ -123,7 +121,6 @@ class JqSensor(Entity):
             ATTR_DEVICE_BRAND: self._device_brand,
             ATTR_DEVICE_MODEL: self._device_model,
             ATTR_DEVICE_ID: self._device_id,
-            ATTR_RAW_STATE: self._state_raw,
         }
         return attrs
 
@@ -144,10 +141,7 @@ class JqSensor(Entity):
 
     def update(self):
         """Update the sensor state if it needed."""
-        ret = self._controller.get_sensors(self._device_id)
+        ret = self._controller.get_sensors_raw(self._device_id)
         if ret:
             self._state = ret[self._sensor_id]
-            self._state_raw = self._controller.get_sensors_raw(
-                self._device_id)[self._sensor_id]
-            _LOGGER.debug('Update state: %s = %s (%s)', self.entity_id,
-                          self._state, self._state_raw)
+            _LOGGER.debug('Update state: %s = %s', self.entity_id, self._state)
