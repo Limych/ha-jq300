@@ -19,8 +19,8 @@ import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import requests
 import voluptuous as vol
-from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
+from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, \
     CONF_DEVICE_ID, CONCENTRATION_PARTS_PER_BILLION, \
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, CONCENTRATION_PARTS_PER_MILLION
@@ -28,13 +28,12 @@ from homeassistant.helpers import discovery
 from requests import PreparedRequest
 
 from .const import DOMAIN, VERSION, ISSUE_URL, SUPPORT_LIB_URL, DATA_JQ300, \
-    QUERY_TYPE_API, QUERY_TYPE_DEVICE, QUERY_METHOD_GET, BASE_URL_API, \
-    BASE_URL_DEVICE, USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, \
-    MSG_GENERIC_FAIL, MSG_LOGIN_FAIL, QUERY_METHOD_POST, MSG_BUSY, \
-    SENSORS, UPDATE_MIN_TIME, CONF_RECEIVE_TVOC_IN_PPB, \
-    CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME, MWEIGTH_TVOC, MWEIGTH_HCHO, \
-    ATTR_DEVICE_BRAND, ATTR_DEVICE_MODEL, ATTR_DEVICE_ID, ATTR_RAW_STATE, \
-    BINARY_SENSORS
+    QUERY_TYPE_API, QUERY_TYPE_DEVICE, BASE_URL_API, BASE_URL_DEVICE, \
+    USERAGENT_API, USERAGENT_DEVICE, QUERY_TIMEOUT, MSG_GENERIC_FAIL, \
+    MSG_LOGIN_FAIL, MSG_BUSY, SENSORS, UPDATE_MIN_TIME, \
+    CONF_RECEIVE_TVOC_IN_PPB, CONF_RECEIVE_HCHO_IN_PPB, SENSORS_FILTER_TIME, \
+    MWEIGTH_TVOC, MWEIGTH_HCHO, ATTR_DEVICE_BRAND, ATTR_DEVICE_MODEL, \
+    ATTR_DEVICE_ID, ATTR_RAW_STATE, BINARY_SENSORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,25 +65,24 @@ async def async_setup(hass, config):
 
     controller = JqController(
         username, password, receive_tvoc_in_ppb, receive_hcho_in_ppb)
-    hass.data[DATA_JQ300][username] = controller
     _LOGGER.info('Connected to cloud account %s', username)
 
     devs = controller.get_devices_list()
     if not devs:
         _LOGGER.error("Can't receive devices list from cloud.")
         return False
-    for dev_id in devs.keys():
+    for dev_id in devs:
         if devices and devs[dev_id]['pt_name'] not in devices:
             continue
+        device = JqDevice(controller, dev_id)
+        hass.data[DATA_JQ300][device.unique_id] = device
         hass.async_create_task(
             discovery.async_load_platform(hass, BINARY_SENSOR, DOMAIN, {
-                CONF_USERNAME: username,
-                CONF_DEVICE_ID: dev_id,
+                CONF_DEVICE_ID: device.unique_id,
             }, config))
         hass.async_create_task(
             discovery.async_load_platform(hass, SENSOR, DOMAIN, {
-                CONF_USERNAME: username,
-                CONF_DEVICE_ID: dev_id,
+                CONF_DEVICE_ID: device.unique_id,
             }, config))
 
     return True
@@ -97,7 +95,7 @@ class JqController:
     # pylint: disable=R0913
     def __init__(self, username, password, receive_tvoc_in_ppb=False,
                  receive_hcho_in_ppb=False):
-        """Initialize configured device."""
+        """Initialize configured controller."""
         self.params = {
             'uid': -1000,
             'safeToken': 'anonymous',
@@ -125,13 +123,13 @@ class JqController:
                 self._units[sensor_id] = data[1]
 
     @property
-    def unique_id(self):
-        """Return a device unique ID."""
+    def unique_id(self) -> str:
+        """Return a controller unique ID."""
         return self._username
 
     @property
-    def name(self):
-        """Get custom device name."""
+    def name(self) -> str:
+        """Get custom controller name."""
         return 'JQ300'
 
     @property
@@ -140,7 +138,7 @@ class JqController:
         return self._login()
 
     @property
-    def units(self):
+    def units(self) -> dict:
         """Get list of units for sensors."""
         return self._units
 
@@ -392,3 +390,69 @@ class JqController:
     def get_sensors_raw(self, device_id) -> Optional[dict]:
         """Get raw values of states of available sensors for device."""
         return self._sensors_raw.get(device_id)
+
+
+class JqDevice:
+    """JQ device controller"""
+
+    def __init__(self, controller: JqController, device_id):
+        """Initialize configured device."""
+        self._controller = controller
+        self._device_id = device_id
+
+        device = controller.get_devices_list()
+        # _LOGGER.debug(device)
+        if not device:
+            _LOGGER.error("Can't receive devices list from cloud.")
+            return
+        self._device = device[device_id]
+
+        self._unique_id = '{}-{}'.format(
+            self._controller.unique_id, self._device_id)
+        self._available = False
+
+    @property
+    def unique_id(self) -> str:
+        """Return a device unique ID."""
+        return self._unique_id
+
+    @property
+    def name(self) -> str:
+        """Get custom device name."""
+        return self._device['pt_name']
+
+    @property
+    def available(self) -> bool:
+        """Return True if device is available."""
+        return self._controller.available
+        # pylint: disable=W0511
+        # todo: Add check for device availability
+
+    @property
+    def units(self) -> dict:
+        """Get list of units for sensors."""
+        return self._controller.units
+
+    @property
+    def sensors(self) -> Optional[dict]:
+        """Get states of available sensors for device."""
+        return self._controller.get_sensors(self._device_id)
+
+    @property
+    def sensors_raw(self) -> Optional[dict]:
+        """Get raw values of states of available sensors for device."""
+        return self._controller.get_sensors_raw(self._device_id)
+
+    @property
+    def device_state_attributes(self):
+        """Return the device state attributes."""
+        return {
+            ATTR_DEVICE_BRAND: self._device['brandname'],
+            ATTR_DEVICE_MODEL: self._device['pt_model'],
+            ATTR_DEVICE_ID: self._device['deviceid'],
+        }
+
+    @property
+    def should_poll(self) -> bool:
+        """Return the polling state."""
+        return True

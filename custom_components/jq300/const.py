@@ -18,7 +18,7 @@ from homeassistant.const import TEMP_CELSIUS, DEVICE_CLASS_TEMPERATURE, \
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.5"
+VERSION = "0.7.6"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 DATA_JQ300 = 'jq300'
@@ -35,9 +35,6 @@ MSG_BUSY = 'The system is busy'
 
 QUERY_TYPE_API = 'API'
 QUERY_TYPE_DEVICE = 'DEVICE'
-
-QUERY_METHOD_GET = 'GET'
-QUERY_METHOD_POST = 'POST'
 
 BASE_URL_API = "http://www.youpinyuntai.com:32086/ypyt-api/api/app/"
 BASE_URL_DEVICE = "https://www.youpinyuntai.com:31447/device/"
@@ -111,7 +108,7 @@ ATTR_DEVICE_MODEL = "device_model"
 ATTR_RAW_STATE = 'raw_state'
 
 UPDATE_MIN_TIME = 20  # seconds
-SENSORS_FILTER_TIME = 600  # seconds
+SENSORS_FILTER_TIME = 900  # seconds
 
-MWEIGTH_TVOC = 56.1060      # g/mol
-MWEIGTH_HCHO = 30.0260      # g/mol
+MWEIGTH_TVOC = 56.1060  # g/mol
+MWEIGTH_HCHO = 30.0260  # g/mol
