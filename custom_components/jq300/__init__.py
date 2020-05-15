@@ -91,7 +91,7 @@ async def async_setup(hass, config):
     # Print startup message
     _LOGGER.info("Version %s", VERSION)
     _LOGGER.info(
-        "If you have ANY issues with this," " please report them here: %s", ISSUE_URL
+        "If you have ANY issues with this, please report them here: %s", ISSUE_URL
     )
 
     hass.data.setdefault(DOMAIN, {})
