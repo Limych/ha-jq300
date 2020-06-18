@@ -12,7 +12,7 @@ https://github.com/Limych/ha-jq300
 import logging
 
 from homeassistant import exceptions
-from homeassistant.components.binary_sensor import BinarySensorDevice, ENTITY_ID_FORMAT
+from homeassistant.components.binary_sensor import BinarySensorEntity, ENTITY_ID_FORMAT
 from homeassistant.const import CONF_DEVICES
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -66,7 +66,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 
 # pylint: disable=too-many-instance-attributes
-class JqBinarySensor(BinarySensorDevice):
+class JqBinarySensor(BinarySensorEntity):
     """A binary sensor implementation for JQ device."""
 
     def __init__(
