@@ -27,7 +27,7 @@ from homeassistant.const import (
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.7"
+VERSION = "0.7.8"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 
@@ -91,7 +91,7 @@ ATTR_DEVICE_MODEL = "device_model"
 ATTR_RAW_STATE = "raw_state"
 
 SCAN_INTERVAL = timedelta(seconds=60)
-UPDATE_MIN_INTERVAL = timedelta(seconds=20)
+UPDATE_MIN_INTERVAL = timedelta(minutes=5)
 SENSORS_FILTER_FRAME = timedelta(minutes=15)
 
 SIGNAL_UPDATE_JQ300 = "jq300_update"
