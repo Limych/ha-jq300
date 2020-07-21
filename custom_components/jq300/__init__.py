@@ -33,6 +33,7 @@ from homeassistant.const import (
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.util import Throttle
 from requests import PreparedRequest
 
 from .const import (
@@ -427,7 +428,8 @@ class JqAccount:
         """Get available devices."""
         return self._devices
 
-    def _fetch_sensors(self, device_id, ts_now, force=False) -> bool:
+    @Throttle(UPDATE_MIN_INTERVAL)
+    def _fetch_sensors(self, device_id, ts_now) -> bool:
         """Fetch states of available sensors for device."""
         devices = self.update_devices()
         if not devices or not devices[device_id]:
@@ -445,7 +447,7 @@ class JqAccount:
             },
         )
         if not ret:
-            return self._fetch_sensors(device_id, ts_now, True) if not force else False
+            return False
 
         res = {}
         for sensor in ret["deviceValueVos"]:
@@ -476,12 +478,7 @@ class JqAccount:
         ts_now = int(dt_util.now().timestamp())
 
         for device_id in self.active_devices:
-            if (
-                not self._sensors[device_id]
-                or max(self._sensors[device_id])
-                < ts_now - UPDATE_MIN_INTERVAL.total_seconds()
-            ):
-                self._fetch_sensors(device_id, ts_now)
+            self._fetch_sensors(device_id, ts_now)
 
         dispatcher_send(self.hass, SIGNAL_UPDATE_JQ300)
 
