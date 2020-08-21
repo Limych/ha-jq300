@@ -27,7 +27,7 @@ from homeassistant.const import (
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.10"
+VERSION = "0.7.11"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 
@@ -82,7 +82,7 @@ SENSORS = {
     ],
     7: ["HCHO", CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, "mdi:cloud", None, None],
     8: ["TVOC", CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, "mdi:radiator", None, None],
-    9: ["eCO2", CONCENTRATION_PARTS_PER_MILLION, "mdi:periodic-table-co2", None, None],
+    9: ["eCO2", CONCENTRATION_PARTS_PER_MILLION, "mdi:molecule-co2", None, None],
 }
 
 ATTR_DEVICE_ID = "device_id"
