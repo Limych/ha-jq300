@@ -19,7 +19,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 
 ROOT = os.path.dirname(os.path.abspath(f"{__file__}/.."))
 
@@ -270,7 +270,7 @@ def main():
     subprocess.run(["git", "commit", "-nam", f"Bump version to {bumped}"])
 
     if arguments.tag:
-        subprocess.run(["git", "tag", f"v{bumped}"])
+        subprocess.run(["git", "tag", f"v{bumped}", "-am", f"Tagging version {bumped}"])
 
 
 # pylint: disable=import-outside-toplevel
