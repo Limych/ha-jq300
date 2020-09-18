@@ -31,7 +31,7 @@ from homeassistant.const import (
 
 # Base component constants
 DOMAIN = "jq300"
-VERSION = "0.7.13"
+VERSION = "0.7.14"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 ATTRIBUTION = None
 
