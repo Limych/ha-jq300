@@ -15,11 +15,15 @@ from homeassistant.components.binary_sensor import (
     DOMAIN as BINARY_SENSOR,
 )
 from homeassistant.components.sensor import DOMAIN as SENSOR
+
+try:
+    from homeassistant.const import PERCENTAGE
+except ImportError:
+    from homeassistant.const import UNIT_PERCENTAGE as PERCENTAGE
 from homeassistant.const import (
     TEMP_CELSIUS,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_HUMIDITY,
-    UNIT_PERCENTAGE,
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONCENTRATION_PARTS_PER_MILLION,
@@ -72,7 +76,7 @@ SENSORS = {
         DEVICE_CLASS_TEMPERATURE,
         None,
     ],
-    5: ["Humidity", UNIT_PERCENTAGE, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, None],
+    5: ["Humidity", PERCENTAGE, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, None],
     6: [
         "PM 2.5",
         CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
