@@ -2,7 +2,9 @@
 black==20.8b1
 flake8~=3.8
 mypy==0.782
+packaging~=20.4
 pre-commit~=2.7
+PyGithub==1.53
 pylint~=2.6
 pylint-strict-informational==0.1
 pyupgrade~=2.7
