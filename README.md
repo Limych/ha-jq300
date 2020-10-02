@@ -25,6 +25,18 @@ I also suggest you [visit the support topic][forum-support] on the community for
 
 _Thanks to [tomaae](https://github.com/tomaae) for the financial support in purchasing the device for creating this project._
 
+## Known Limitations and Issues
+
+- In some cases, the component may stop initializing.\
+This is due to the fact that the authors of JQ-300 have recently begun to actively block attempts to receive data from their cloud bypassing the official application.\
+There is only one way to fix it so far — to change the public IP address of your computer.
+
+- The component now works with only one sensor.\
+This is due to an artificially added limit on the rate of requests to the cloud. We had to add it so that you do not fall under permanent blocking on cloud. This is a temporary solution.
+
+- Only one application can be logged into an cloud account at a time.\
+Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
+
 ## Installation
 
 ### HACS - Recommended
@@ -40,19 +52,10 @@ _Thanks to [tomaae](https://github.com/tomaae) for the financial support in purc
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
 2. If you do not have a `custom_components` directory (folder) there, you need to create it.
 3. In the `custom_components` directory (folder) create a new folder called `jq300`.
-4. Download _all_ the files from the `custom_components/jq300/` directory (folder) in this repository.
-5. Place the files you downloaded in the new directory (folder) you created.
+4. Download file `jq300.zip` from the [latest release section][latest-release] in this repository.
+5. Extract _all_ files from this archive you downloaded in the directory (folder) `jq300` you created.
 1. Configure using the configuration instructions below.
 1. Restart Home-Assistant.
-
-Using your HA configuration directory (folder) as a starting point you should now also have this:
-
-```text
-custom_components/jq300/__init__.py
-custom_components/jq300/const.py
-custom_components/jq300/manifest.json
-custom_components/jq300/sensor.py
-```
 
 <p align="center">* * *</p>
 I put a lot of work into making this repo and component available and updated to inspire and help others! I will be glad to receive thanks from you — it will give me new strength and add enthusiasm:
@@ -79,7 +82,7 @@ jq300:
 > **_Note_**:\
 > Before using the devices you need to connect them to your account through the official app.
 >
-> Only one user can be logged into an account at a time. Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
+> Only one application can be logged into an account at a time. Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
 
 We recommend using [the IAQ UK sensor](https://github.com/Limych/ha-iaquk) to evaluate overall air quality. Example configuration:
 
@@ -128,13 +131,20 @@ iaquk:
   By default, the cloud returns the HCHO (formaldehyde) value in `mg/m³` units. Setting this parameter to `True` allows to receive data in `ppb` units.\
   _Default value: False_
 
+## Track updates
+
+You can automatically track new versions of this component and update it by [HACS][hacs].
+
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
 
-## Track updates
+## Authors & contributors
 
-You can automatically track new versions of this component and update it by [HACS][hacs].
+The original setup of this component is by [Andrey "Limych" Khrolenok][limych].
+
+For a full list of all authors and contributors,
+check [the contributor's page][contributors].
 
 ## License
 
@@ -144,3 +154,6 @@ See separate [license file](LICENSE.md) for full text.
 
 [forum-support]: https://community.home-assistant.io/t/jq-300-200-100-indoor-air-quality-meter/189098
 [hacs]: https://github.com/custom-components/hacs
+[latest-release]: https://github.com/Limych/ha-jq300/releases/latest
+[limych]: https://github.com/Limych
+[contributors]: https://github.com/Limych/ha-jq300/graphs/contributors
