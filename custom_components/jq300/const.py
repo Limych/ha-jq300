@@ -51,6 +51,7 @@ QUERY_TYPE_DEVICE = "DEVICE"
 
 BASE_URL_API = "http://www.youpinyuntai.com:32086/ypyt-api/api/app/"
 BASE_URL_DEVICE = "https://www.youpinyuntai.com:31447/device/"
+MQTT_URL = "mqtt://ye5h8c3n:T%4ran8c@www.youpinyuntai.com:55450"
 
 _USERAGENT_SYSTEM = "Android 6.0.1; RedMi Note 5 Build/RB3N5C"
 USERAGENT_API = "Dalvik/2.1.0 (Linux; U; %s)" % _USERAGENT_SYSTEM
@@ -94,9 +95,7 @@ ATTR_DEVICE_BRAND = "device_brand"
 ATTR_DEVICE_MODEL = "device_model"
 ATTR_RAW_STATE = "raw_state"
 
-SCAN_INTERVAL = timedelta(seconds=60)
-UPDATE_MIN_INTERVAL = timedelta(minutes=10)
-SENSORS_FILTER_FRAME = timedelta(minutes=15)
+SENSORS_FILTER_FRAME = timedelta(minutes=5)
 
 SIGNAL_UPDATE_JQ300 = "jq300_update"
 

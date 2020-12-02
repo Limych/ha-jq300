@@ -10,6 +10,7 @@ https://github.com/Limych/ha-jq300
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 import logging
+from time import sleep
 
 from homeassistant import exceptions
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
@@ -49,9 +50,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     entities = []
     for dev_name, dev_id in devices.items():
         sensors = account.get_sensors(dev_id)
-        if not sensors:
-            _LOGGER.error("Can't receive sensors list for device '%s'.", dev_id)
-            continue
+        while not sensors:
+            _LOGGER.debug("Sensors list is not ready. Wait for 3 sec...")
+            sleep(3)
+            sensors = account.get_sensors(dev_id)
 
         for sensor_id, sensor_state in sensors.items():
             if sensor_id not in SENSORS.keys():
