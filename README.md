@@ -27,15 +27,12 @@ _Thanks to [tomaae](https://github.com/tomaae) for the financial support in purc
 
 ## Known Limitations and Issues
 
-- In some cases, the component may stop initializing.\
+- In some cases, the component may stop working.\
 This is due to the fact that the authors of JQ-300 have recently begun to actively block attempts to receive data from their cloud bypassing the official application.\
 There is only one way to fix it so far — to change the public IP address of your computer.
 
-- The component now works with only one sensor.\
-This is due to an artificially added limit on the rate of requests to the cloud. We had to add it so that you do not fall under permanent blocking on cloud. This is a temporary solution.
-
 - Only one application can be logged into an cloud account at a time.\
-Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
+Therefore, each time restarted HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
 
 ## Installation
 
@@ -82,7 +79,7 @@ jq300:
 > **_Note_**:\
 > Before using the devices you need to connect them to your account through the official app.
 >
-> Only one application can be logged into an account at a time. Therefore, each time updated the sensor values from HA, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
+> Only one application can be logged into an account at a time. Therefore, each time restarted this integration, authorization from the official application on your phone will be lost. Authorization is restored when you restart the official application.
 
 We recommend using [the IAQ UK sensor](https://github.com/Limych/ha-iaquk) to evaluate overall air quality. Example configuration:
 
