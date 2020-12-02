@@ -491,6 +491,9 @@ class JqAccount:
             )
 
     def _update_sensors(self, message):
+        if message["type"] != "V":
+            return
+
         device_id = None
         for dev_id, dev in self.devices.items():
             if message["deviceToken"] == dev["deviceToken"]:
@@ -577,15 +580,16 @@ class JqAccount:
             1, ts_now - max(min(self._sensors[device_id].keys()), ts_overdue) + 1
         )
         # _LOGGER.debug('Averaging: %s / %s', res, length)
+        raw = self.get_sensors_raw(device_id) or ()
         for sensor_id in res:
             res[sensor_id] = (
                 self._sensors_raw[device_id][1]
                 if sensor_id == 1
                 else int(res[sensor_id] / length)
                 if self._units[sensor_id]
-                in (CONCENTRATION_PARTS_PER_MILLION, CONCENTRATION_PARTS_PER_BILLION,)
+                in (CONCENTRATION_PARTS_PER_MILLION, CONCENTRATION_PARTS_PER_BILLION)
                 else round(
-                    res[sensor_id] / length, 1 if isinstance(res[sensor_id], int) else 3
+                    res[sensor_id] / length, 1 if isinstance(raw[sensor_id], int) else 3
                 )
             )
         # _LOGGER.debug('Result: %s', res)
