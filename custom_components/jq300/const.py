@@ -76,18 +76,27 @@ SENSORS = {
         "mdi:thermometer",
         DEVICE_CLASS_TEMPERATURE,
         None,
+        1,
     ],
-    5: ["Humidity", PERCENTAGE, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, None],
+    5: ["Humidity", PERCENTAGE, "mdi:water-percent", DEVICE_CLASS_HUMIDITY, None, 1],
     6: [
         "PM 2.5",
         CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         "mdi:air-filter",
         None,
         "pm25",
+        0,
     ],
-    7: ["HCHO", CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, "mdi:cloud", None, None],
-    8: ["TVOC", CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, "mdi:radiator", None, None],
-    9: ["eCO2", CONCENTRATION_PARTS_PER_MILLION, "mdi:molecule-co2", None, None],
+    7: ["HCHO", CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER, "mdi:cloud", None, None, 3],
+    8: [
+        "TVOC",
+        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+        "mdi:radiator",
+        None,
+        None,
+        3,
+    ],
+    9: ["eCO2", CONCENTRATION_PARTS_PER_MILLION, "mdi:molecule-co2", None, None, 0],
 }
 
 ATTR_DEVICE_ID = "device_id"

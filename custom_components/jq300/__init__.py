@@ -580,17 +580,17 @@ class JqAccount:
             1, ts_now - max(min(self._sensors[device_id].keys()), ts_overdue) + 1
         )
         # _LOGGER.debug('Averaging: %s / %s', res, length)
-        raw = self.get_sensors_raw(device_id) or ()
         for sensor_id in res:
+            tmp = SENSORS.get(sensor_id)
+            rnd = tmp[5] if tmp else 0
             res[sensor_id] = (
                 self._sensors_raw[device_id][1]
                 if sensor_id == 1
                 else int(res[sensor_id] / length)
-                if self._units[sensor_id]
+                if rnd == 0
+                or self._units[sensor_id]
                 in (CONCENTRATION_PARTS_PER_MILLION, CONCENTRATION_PARTS_PER_BILLION)
-                else round(
-                    res[sensor_id] / length, 1 if isinstance(raw[sensor_id], int) else 3
-                )
+                else round(res[sensor_id] / length, rnd)
             )
         # _LOGGER.debug('Result: %s', res)
         return res
