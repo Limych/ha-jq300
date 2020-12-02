@@ -91,15 +91,16 @@ We recommend using [the IAQ UK sensor](https://github.com/Limych/ha-iaquk) to ev
 jq300:
   username: YOUR_EMAIL
   password: YOUR_PASSWORD
-  devices: jq300
+  devices:
+    - Kitchen
 iaquk:
-  jq300:
+  Kitchen:
     sources:
-      humidity: sensor.jq300_humidity
-      co2: sensor.jq300_eco2
-      tvoc: sensor.jq300_tvoc
-      hcho: sensor.jq300_hcho
-      pm: sensor.jq300_pm25
+      humidity: sensor.kitchen_humidity
+      co2: sensor.kitchen_eco2
+      tvoc: sensor.kitchen_tvoc
+      hcho: sensor.kitchen_hcho
+      pm: sensor.kitchen_pm25
 ```
 
 ### Configuration variables
