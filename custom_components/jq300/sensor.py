@@ -19,7 +19,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 
-from . import JqAccount
+from . import JqAccount, CannotConnect
 from .const import (
     SENSORS,
     ATTR_RAW_STATE,
@@ -36,16 +36,23 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-argument
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_platform(
+    hass, config, async_add_entities, discovery_info=None
+) -> bool:
     """Set up a sensors to integrate JQ-300."""
     if discovery_info is None:
-        return
+        return True
 
     domain_data = hass.data[DOMAIN][discovery_info[CONF_ACCOUNT_ID]]
     account = domain_data[ACCOUNT_CONTROLLER]  # type: JqAccount
     devices = domain_data[CONF_DEVICES]  # type: dict
 
     _LOGGER.debug("Setup sensors for account %s", account.name_secure)
+
+    try:
+        await account.async_update_sensors_or_timeout()
+    except CannotConnect:
+        return False
 
     entities = []
     for dev_name, dev_id in devices.items():
@@ -58,7 +65,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         for sensor_id, sensor_state in sensors.items():
             if sensor_id not in SENSORS.keys():
                 continue
-            ent_name = SENSORS.get(sensor_id)[4] or SENSORS.get(sensor_id)[0]
+            ent_name = SENSORS[sensor_id][4] or SENSORS[sensor_id][0]
             entity_id = async_generate_entity_id(
                 ENTITY_ID_FORMAT, "_".join((dev_name, ent_name)), hass=hass
             )
@@ -68,6 +75,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             )
 
     async_add_entities(entities)
+
+    return True
 
 
 # pylint: disable=too-many-instance-attributes
@@ -121,9 +130,7 @@ class JqSensor(Entity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self._account.available and bool(
-            self._account.devices.get(self._device_id, {}).get("onlinestat", False)
-        )
+        return self._account.device_available(self._device_id)
 
     @property
     def state(self):

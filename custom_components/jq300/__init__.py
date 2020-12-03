@@ -12,6 +12,7 @@ https://github.com/Limych/ha-jq300
 import asyncio
 import json
 import logging
+from datetime import timedelta
 from time import monotonic
 from typing import Optional, Dict, Any
 from urllib.parse import urlparse
@@ -33,6 +34,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import dispatcher_send
+from homeassistant.util import Throttle
 from requests import PreparedRequest
 
 from .const import (
@@ -81,7 +83,7 @@ ACCOUNT_SCHEMA = vol.Schema(
 CONFIG_SCHEMA = vol.Schema({DOMAIN: ACCOUNT_SCHEMA}, extra=vol.ALLOW_EXTRA)
 
 
-async def async_setup(hass, config):
+async def async_setup(hass, config) -> bool:
     """Set up component environment."""
     conf = config.get(DOMAIN)
     if conf is None:
@@ -168,7 +170,6 @@ class JqAccount:
 
         self._mqtt = None
         self._active_devices = []
-        self._available = False
         self._session = requests.session()
         self._devices = {}
         self._sensors = {}
@@ -319,6 +320,8 @@ class JqAccount:
         if not force and self.params["uid"] > 0:
             return True
 
+        _LOGGER.debug("Connecting to cloud server%s", " (FORCE mode)" if force else "")
+
         self.params["uid"] = -1000
         self.params["safeToken"] = "anonymous"
         ret = self._query(
@@ -343,7 +346,7 @@ class JqAccount:
         return True
 
     def _mqtt_connect(self):
-        _LOGGER.debug("MQTT connection")
+        _LOGGER.debug("Start connecting to cloud MQTT-server")
         if self._mqtt is not None or not self.is_connected:
             return
 
@@ -360,7 +363,7 @@ class JqAccount:
             try:
                 msg = json.loads(message.payload)
                 _LOGGER.debug("Received MQTT message: %s", msg)
-                self._update_sensors(msg)
+                self._mqtt_process_message(msg)
             except Exception as exc:  # pylint: disable=broad-except
                 logging.exception(exc)
 
@@ -379,7 +382,7 @@ class JqAccount:
                 self._mqtt.username_pw_set(parsed.username, parsed.password)
             else:
                 _LOGGER.error(
-                    "The MQTT password was not found, " "this is required for auth"
+                    "The MQTT password was not found, this is required for auth"
                 )
         self._mqtt.connect_async(host=parsed.hostname, port=parsed.port)
         self._mqtt.loop_start()
@@ -391,6 +394,35 @@ class JqAccount:
     def _mqtt_unsubscribe(self, topics: list):
         if self._mqtt.is_connected():
             self._mqtt.unsubscribe(topics)
+
+    def _mqtt_process_message(self, message: dict):
+        device_id = None
+        for dev_id, dev in self.devices.items():
+            if message["deviceToken"] == dev["deviceToken"]:
+                device_id = dev_id
+        if device_id is None:
+            return
+
+        if message["type"] == "V":
+            _LOGGER.debug("Update sensors for device %d", device_id)
+            self._extract_sensors_data(
+                device_id,
+                int(dt_util.now().timestamp()),
+                json.loads(message["content"]),
+            )
+
+        elif message["type"] == "C":
+            _LOGGER.debug("Update online status for device %d", device_id)
+            if self.devices.get(device_id) is None:
+                return
+            self.devices[device_id]["onlinestat"] = message["content"]
+
+        else:
+            _LOGGER.warning("Unknown message type: %s", message)
+            return
+
+        if self.hass:
+            dispatcher_send(self.hass, SIGNAL_UPDATE_JQ300)
 
     def _get_devices_mqtt_topics(self, device_ids: list) -> list:
         devs = self.update_devices()
@@ -490,21 +522,15 @@ class JqAccount:
                 monotonic() - start,
             )
 
-    def _update_sensors(self, message):
-        if message["type"] != "V":
-            return
+    def device_available(self, device_id) -> bool:
+        """Return True if device is available."""
+        return (
+            self.available and self.devices.get(device_id, {}).get("onlinestat") == "1"
+        )
 
-        device_id = None
-        for dev_id, dev in self.devices.items():
-            if message["deviceToken"] == dev["deviceToken"]:
-                device_id = dev_id
-        if device_id is None:
-            return
-
-        _LOGGER.debug("Update sensors for device %d", device_id)
+    def _extract_sensors_data(self, device_id, ts_now: int, sensors: dict):
         res = {}
-        ts_now = int(dt_util.now().timestamp())
-        for sensor in json.loads(message["content"]):
+        for sensor in sensors:
             sensor_id = sensor["seq"]
             if sensor["content"] is None or (
                 sensor_id not in SENSORS.keys()
@@ -524,8 +550,63 @@ class JqAccount:
         self._sensors_raw[device_id] = res
         self._sensors_last_update = ts_now
 
+    @Throttle(timedelta(minutes=10))
+    def update_sensors(self, _=None):
+        """Update current states of all active devices for account."""
+        _LOGGER.debug("Updating sensors state for account %s", self.name_secure)
+
+        ts_now = int(dt_util.now().timestamp())
+
+        for device_id in self.active_devices:
+            if self.get_sensors_raw(device_id) is not None:
+                continue
+
+            ret = self._query(
+                QUERY_TYPE_DEVICE,
+                "list",
+                extra_params={
+                    "deviceToken": self.devices[device_id]["deviceToken"],
+                    "timestamp": ts_now,
+                    "callback": "jsoncallback",
+                    "_": ts_now,
+                },
+            )
+            if not ret:
+                return False
+
+            self._extract_sensors_data(device_id, ts_now, ret["deviceValueVos"])
+
         if self.hass:
             dispatcher_send(self.hass, SIGNAL_UPDATE_JQ300)
+
+    @Throttle(timedelta(minutes=10))
+    async def async_update_sensors_or_timeout(self, timeout=UPDATE_TIMEOUT):
+        """Update current states of all active devices for account."""
+        try:
+            with async_timeout.timeout(timeout):
+                start = monotonic()
+                await self.hass.async_add_job(self.update_sensors)
+                while self._sensors_last_update < start:
+                    # Waiting for connection and check datas ready
+                    await asyncio.sleep(1)
+
+        except asyncio.TimeoutError as err:
+            _LOGGER.error("Timeout fetching %s device's sensors", self.name_secure)
+            raise CannotConnect from err
+
+        except Exception as err:  # pylint: disable=broad-except
+            _LOGGER.exception(
+                "Unexpected error fetching %s device's sensors: %s",
+                self.name_secure,
+                err,
+            )
+
+        finally:
+            _LOGGER.debug(
+                "Finished fetching %s device's sensors in %.3f seconds",
+                self.name_secure,
+                monotonic() - start,
+            )
 
     def get_sensors_raw(self, device_id) -> Optional[dict]:
         """Get raw values of states of available sensors for device."""
