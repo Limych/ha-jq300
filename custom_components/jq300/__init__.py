@@ -354,7 +354,9 @@ class JqAccount:
         def on_connect_callback(client, userdata, flags, res):
             _LOGGER.debug("Connected to MQTT")
             try:
-                self._mqtt_subscribe(self._get_devices_mqtt_topics(self.active_devices))
+                sub = self._get_devices_mqtt_topics(self.active_devices)
+                if sub:
+                    self._mqtt_subscribe(sub)
             except Exception as exc:  # pylint: disable=broad-except
                 logging.exception(exc)
 
@@ -524,8 +526,9 @@ class JqAccount:
 
     def device_available(self, device_id) -> bool:
         """Return True if device is available."""
-        return (
-            self.available and self.devices.get(device_id, {}).get("onlinestat") == "1"
+        return self.available and (
+            self.devices.get(device_id, {}).get("onlinestat") == "1"
+            or monotonic() - self._sensors_last_update < 60
         )
 
     def _extract_sensors_data(self, device_id, ts_now: int, sensors: dict):
@@ -548,7 +551,7 @@ class JqAccount:
 
         self._sensors[device_id][ts_now] = res
         self._sensors_raw[device_id] = res
-        self._sensors_last_update = ts_now
+        self._sensors_last_update = monotonic()
 
     @Throttle(timedelta(minutes=10))
     def update_sensors(self, _=None):
@@ -572,7 +575,7 @@ class JqAccount:
                 },
             )
             if not ret:
-                return False
+                return
 
             self._extract_sensors_data(device_id, ts_now, ret["deviceValueVos"])
 
