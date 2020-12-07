@@ -354,9 +354,7 @@ class JqAccount:
         def on_connect_callback(client, userdata, flags, res):
             _LOGGER.debug("Connected to MQTT")
             try:
-                sub = self._get_devices_mqtt_topics(self.active_devices)
-                if sub:
-                    self._mqtt_subscribe(sub)
+                self._mqtt_subscribe(self._get_devices_mqtt_topics(self.active_devices))
             except Exception as exc:  # pylint: disable=broad-except
                 logging.exception(exc)
 
