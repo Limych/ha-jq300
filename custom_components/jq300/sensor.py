@@ -15,8 +15,6 @@ from time import sleep
 from homeassistant import exceptions
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.const import CONF_DEVICES
-from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity, async_generate_entity_id
 
 from . import JqAccount, CannotConnect
@@ -29,7 +27,6 @@ from .const import (
     ATTR_DEVICE_ID,
     ACCOUNT_CONTROLLER,
     CONF_ACCOUNT_ID,
-    SIGNAL_UPDATE_JQ300,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -109,19 +106,6 @@ class JqSensor(Entity):
         self._icon = SENSORS[sensor_id][2]
         self._device_class = SENSORS[sensor_id][3]
 
-    async def async_added_to_hass(self):
-        """Register callbacks."""
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, SIGNAL_UPDATE_JQ300, self._update_callback
-            )
-        )
-
-    @callback
-    def _update_callback(self):
-        """Call update method."""
-        self.async_schedule_update_ha_state(True)
-
     @property
     def name(self):
         """Return the name of the sensor."""
@@ -170,19 +154,21 @@ class JqSensor(Entity):
     @property
     def should_poll(self):
         """Return the polling state."""
-        return False
+        return True
 
     def update(self):
         """Update the sensor state if it needed."""
         ret = self._account.get_sensors(self._device_id)
-        if ret:
-            self._state = ret[self._sensor_id]
-            self._state_raw = self._account.get_sensors_raw(self._device_id)[
-                self._sensor_id
-            ]
-            _LOGGER.debug(
-                "Update state: %s = %s (%s)",
-                self.entity_id,
-                self._state,
-                self._state_raw,
-            )
+        if not ret:
+            return
+
+        state = ret[self._sensor_id]
+        state_raw = self._account.get_sensors_raw(self._device_id)[self._sensor_id]
+        if self._state == state and self._state_raw == state_raw:
+            return
+
+        self._state = state
+        self._state_raw = state_raw
+        _LOGGER.debug(
+            "Update state: %s = %s (%s)", self.entity_id, self._state, self._state_raw,
+        )

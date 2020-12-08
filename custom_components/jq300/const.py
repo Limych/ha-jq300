@@ -106,10 +106,9 @@ ATTR_RAW_STATE = "raw_state"
 
 SENSORS_FILTER_FRAME = timedelta(minutes=5)
 
-SIGNAL_UPDATE_JQ300 = "jq300_update"
-
 QUERY_TIMEOUT = 7  # seconds
 UPDATE_TIMEOUT = 12  # seconds
+AVAILABLE_TIMEOUT = 30  # seconds
 
 MWEIGTH_TVOC = 56.1060  # g/mol
 MWEIGTH_HCHO = 30.0260  # g/mol

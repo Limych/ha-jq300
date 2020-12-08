@@ -33,7 +33,6 @@ from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
 )
 from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import dispatcher_send
 from homeassistant.util import Throttle
 from requests import PreparedRequest
 
@@ -61,9 +60,9 @@ from .const import (
     PLATFORMS,
     UPDATE_TIMEOUT,
     ACCOUNT_CONTROLLER,
-    SIGNAL_UPDATE_JQ300,
     CONF_ACCOUNT_ID,
     MQTT_URL,
+    AVAILABLE_TIMEOUT,
 )
 from .util import mask_email
 
@@ -311,11 +310,11 @@ class JqAccount:
         return response
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Return True if connected to account."""
         return self.params["uid"] > 0
 
-    def connect(self, force=False) -> bool:
+    def connect(self, force: bool = False) -> bool:
         """(Re)Connect to account and return connection status."""
         if not force and self.params["uid"] > 0:
             return True
@@ -412,17 +411,16 @@ class JqAccount:
             )
 
         elif message["type"] == "C":
-            _LOGGER.debug("Update online status for device %d", device_id)
             if self.devices.get(device_id) is None:
                 return
-            self.devices[device_id]["onlinestat"] = message["content"]
+            online = int(message["content"])
+            _LOGGER.debug("Update online status for device %d: %d", device_id, online)
+            if online != self.devices[device_id].get("onlinestat"):
+                self.devices[device_id]["onlinets"] = monotonic()
+            self.devices[device_id]["onlinestat"] = online
 
         else:
             _LOGGER.warning("Unknown message type: %s", message)
-            return
-
-        if self.hass:
-            dispatcher_send(self.hass, SIGNAL_UPDATE_JQ300)
 
     def _get_devices_mqtt_topics(self, device_ids: list) -> list:
         devs = self.update_devices()
@@ -487,6 +485,7 @@ class JqAccount:
         tstamp = int(dt_util.now().timestamp() * 1000)
         for dev in ret["deviceInfoBodyList"]:
             dev[""] = tstamp
+            dev["onlinets"] = monotonic()
             self._devices[dev["deviceid"]] = dev
 
         for device_id in self._devices:
@@ -524,10 +523,22 @@ class JqAccount:
 
     def device_available(self, device_id) -> bool:
         """Return True if device is available."""
-        return self.available and (
-            self.devices.get(device_id, {}).get("onlinestat") == "1"
-            or monotonic() - self._sensors_last_update < 60
+        dev = self.devices.get(device_id, {})
+        device_available = dev.get("onlinestat") == 1
+        device_timeout = (monotonic() - dev.get("onlinets", 0)) <= AVAILABLE_TIMEOUT
+        online = self.available and (device_available or device_timeout)
+
+        # pylint: disable=logging-too-many-args
+        _LOGGER.debug(
+            "Availability: %s (account) AND (%s (device %s) OR %s (timeout)) = $s",
+            self.available,
+            device_available,
+            device_id,
+            device_timeout,
+            online,
         )
+
+        return online
 
     def _extract_sensors_data(self, device_id, ts_now: int, sensors: dict):
         res = {}
@@ -576,9 +587,6 @@ class JqAccount:
                 return
 
             self._extract_sensors_data(device_id, ts_now, ret["deviceValueVos"])
-
-        if self.hass:
-            dispatcher_send(self.hass, SIGNAL_UPDATE_JQ300)
 
     @Throttle(timedelta(minutes=10))
     async def async_update_sensors_or_timeout(self, timeout=UPDATE_TIMEOUT):

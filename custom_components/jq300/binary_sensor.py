@@ -15,8 +15,6 @@ from time import sleep
 from homeassistant import exceptions
 from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT
 from homeassistant.const import CONF_DEVICES
-from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import async_generate_entity_id
 
 # Code snippet to keep compatibility with Home Assistant 0.109
@@ -35,7 +33,6 @@ from .const import (
     ATTR_DEVICE_MODEL,
     ATTR_DEVICE_ID,
     ACCOUNT_CONTROLLER,
-    SIGNAL_UPDATE_JQ300,
     CONF_ACCOUNT_ID,
 )
 
@@ -114,19 +111,6 @@ class JqBinarySensor(BinarySensorEntity):
         self._icon = BINARY_SENSORS[sensor_id][2]
         self._device_class = BINARY_SENSORS[sensor_id][3]
 
-    async def async_added_to_hass(self):
-        """Register callbacks."""
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, SIGNAL_UPDATE_JQ300, self._update_callback
-            )
-        )
-
-    @callback
-    def _update_callback(self):
-        """Call update method."""
-        self.async_schedule_update_ha_state(True)
-
     @property
     def name(self):
         """Return the name of the binary sensor."""
@@ -169,11 +153,16 @@ class JqBinarySensor(BinarySensorEntity):
     @property
     def should_poll(self):
         """Return the polling state."""
-        return False
+        return True
 
     def update(self):
         """Update the sensor state if it needed."""
         ret = self._account.get_sensors_raw(self._device_id)
-        if ret:
-            self._state = ret[self._sensor_id]
-            _LOGGER.debug("Update state: %s = %s", self.entity_id, self._state)
+        if not ret:
+            return
+
+        if self._state == ret[self._sensor_id]:
+            return
+
+        self._state = ret[self._sensor_id]
+        _LOGGER.debug("Update state: %s = %s", self.entity_id, self._state)
