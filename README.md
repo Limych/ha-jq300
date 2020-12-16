@@ -133,6 +133,17 @@ iaquk:
 
 You can automatically track new versions of this component and update it by [HACS][hacs].
 
+## Troubleshooting
+
+To enable debug logs use this configuration:
+```yaml
+# Example configuration.yaml entry
+logger:
+  logs:
+    custom_components.jq300: debug
+```
+... then restart HA.
+
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
