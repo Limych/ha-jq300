@@ -25,6 +25,9 @@ I also suggest you [visit the support topic][forum-support] on the community for
 
 _Thanks to [tomaae](https://github.com/tomaae) for the financial support in purchasing the device for creating this project._
 
+**Note:**\
+It was discovered that there is [no difference between the JQ-200 and JQ-300](https://community.home-assistant.io/t/jq-300-200-100-indoor-air-quality-meter/189098/42) models. Although the JQ-200 does not show PM2.5 sensor data in the official app, in fact this data is collected and transmitted from the cloud. Our component sees and displays them correctly. So you have the opportunity to save some money if you wish when purchasing.
+
 ## Known Limitations and Issues
 
 - In some cases, the component may stop working.\
