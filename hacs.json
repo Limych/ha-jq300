@@ -1,5 +1,7 @@
 {
-  "name": "JQ-300/200/100 Indoor Air Quality Meter",
-  "domains": ["jq300", "sensor"],
-  "iot_class": "Local Push"
+    "name": "JQ-300/200/100 Indoor Air Quality Meter",
+    "domains": ["sensor"],
+    "hacs": "1.6.0",
+    "iot_class": "Cloud Push",
+    "homeassistant": "0.118.0"
 }

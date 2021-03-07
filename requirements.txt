@@ -1,4 +1,2 @@
-requests~=2.25
-voluptuous~=0.12
-homeassistant~=0.118
-paho-mqtt~=1.5
+homeassistant
+paho-mqtt==1.5.1
