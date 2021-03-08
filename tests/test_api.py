@@ -1,89 +1,68 @@
+# pylint: disable=protected-access
 """Tests for integration_blueprint api."""
-import asyncio
 
-import aiohttp
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest import raises
 
-from custom_components.jq300.api import JqApiClient
+from custom_components.jq300.api import (
+    QUERY_TYPE_API,
+    QUERY_TYPE_DEVICE,
+    USERAGENT_API,
+    USERAGENT_DEVICE,
+    Jq300Account,
+)
 
 
-async def test_api(hass, aioclient_mock, caplog):
-    """Test API calls."""
+async def test_init(hass: HomeAssistant):
+    """Test API initialization."""
+    session = async_get_clientsession(hass)
+    api = Jq300Account(hass, session, "test@email.com", "test_password", False, False)
 
-    # To test the api submodule, we first create an instance of our API client
-    api = JqApiClient("test", "test", async_get_clientsession(hass))
+    expected_units = {4: "°C", 5: "%", 6: "µg/m³", 7: "mg/m³", 8: "mg/m³", 9: "ppm"}
 
-    # Use aioclient_mock which is provided by `pytest_homeassistant_custom_component`
-    # to mock responses to aiohttp requests. In this case we are telling the mock to
-    # return {"test": "test"} when a `GET` call is made to the specified URL. We then
-    # call `async_get_data` which will make that `GET` request.
-    aioclient_mock.get(
-        "https://jsonplaceholder.typicode.com/posts/1", json={"test": "test"}
-    )
-    assert await api.async_get_data() == {"test": "test"}
+    assert isinstance(USERAGENT_API, str) and len(USERAGENT_API) > 20
+    assert isinstance(USERAGENT_DEVICE, str) and len(USERAGENT_DEVICE) > 20
 
-    # We do the same for `async_set_title`. Note the difference in the mock call
-    # between the previous step and this one. We use `patch` here instead of `get`
-    # because we know that `async_set_title` calls `api_wrapper` with `patch` as the
-    # first parameter
-    aioclient_mock.clear_requests()
-    #
-    aioclient_mock.patch("https://jsonplaceholder.typicode.com/posts/1")
-    assert await api.async_set_title("test") is None
-
-    # In order to get 100% coverage, we need to test `api_wrapper` to test the code
-    # that isn't already called by `async_get_data` and `async_set_title`. Because the
-    # only logic that lives inside `api_wrapper` that is not being handled by a third
-    # party library (aiohttp) is the exception handling, we also want to simulate
-    # raising the exceptions to ensure that the function handles them as expected.
-    # The caplog fixture allows access to log messages in tests. This is particularly
-    # useful during exception handling testing since often the only action as part of
-    # exception handling is a logging statement
-    caplog.clear()
-    aioclient_mock.clear_requests()
-    #
-    aioclient_mock.put(
-        "https://jsonplaceholder.typicode.com/posts/1", exc=asyncio.TimeoutError
-    )
-    with raises(asyncio.TimeoutError):
-        await api.api_wrapper("put", "https://jsonplaceholder.typicode.com/posts/1")
+    assert api.unique_id == "test@email.com"
+    assert api.name == "test@email.com"
+    assert api.name_secure == "te*t@em**l.com"
+    assert api.available is False
+    assert api.units == expected_units
+    assert api._get_useragent(QUERY_TYPE_API) == USERAGENT_API
+    assert api._get_useragent(QUERY_TYPE_DEVICE) == USERAGENT_DEVICE
+    with raises(ValueError):
+        _ = api._get_useragent("")
     assert (
-        len(caplog.record_tuples) == 1
-        and "Timeout error fetching information from" in caplog.record_tuples[0][2]
+        api._add_url_params("http://some/url", {"extra": 1})
+        == "http://some/url?uid=-1000&safeToken=anonymous&extra=1"
     )
-
-    caplog.clear()
-    aioclient_mock.clear_requests()
-    #
-    aioclient_mock.post("https://jsonplaceholder.typicode.com/posts/3", exc=TypeError)
-    with raises(TypeError):
-        await api.api_wrapper("post", "https://jsonplaceholder.typicode.com/posts/3")
     assert (
-        len(caplog.record_tuples) == 1
-        and "Error parsing information from" in caplog.record_tuples[0][2]
+        api._add_url_params("http://some/url", {"extra": 1, "par": 2})
+        == "http://some/url?uid=-1000&safeToken=anonymous&extra=1&par=2"
     )
-
-    caplog.clear()
-    aioclient_mock.clear_requests()
-    #
-    aioclient_mock.post(
-        "https://jsonplaceholder.typicode.com/posts/1", exc=aiohttp.ClientError
-    )
-    with raises(aiohttp.ClientError):
-        await api.api_wrapper("post", "https://jsonplaceholder.typicode.com/posts/1")
     assert (
-        len(caplog.record_tuples) == 1
-        and "Error fetching information from" in caplog.record_tuples[0][2]
+        api._get_url(QUERY_TYPE_API, "func")
+        == "http://www.youpinyuntai.com:32086/ypyt-api/api/app/func"
     )
-
-    caplog.clear()
-    aioclient_mock.clear_requests()
-    #
-    aioclient_mock.post("https://jsonplaceholder.typicode.com/posts/2", exc=Exception)
-    with raises(Exception):
-        await api.api_wrapper("post", "https://jsonplaceholder.typicode.com/posts/2")
     assert (
-        len(caplog.record_tuples) == 1
-        and "Something really wrong happened!" in caplog.record_tuples[0][2]
+        api._get_url(QUERY_TYPE_DEVICE, "func")
+        == "https://www.youpinyuntai.com:31447/device/func"
     )
+    assert (
+        api._get_url(QUERY_TYPE_DEVICE, "func", {"extra": 1})
+        == "https://www.youpinyuntai.com:31447/device/func?uid=-1000&safeToken=anonymous&extra=1"
+    )
+    with raises(ValueError):
+        _ = api._get_url("", "func")
+
+
+# async def test__async_query(hass: HomeAssistant, aioclient_mock, caplog):
+#     """Test HTTP requesting."""
+#     session = async_get_clientsession(hass)
+#     api = Jq300Account(hass, session, "test@email.com", "test_password", False, False)
+#
+#     aioclient_mock.get(
+#         api._get_url(QUERY_TYPE_API, "func"), json={"test": "test"}
+#     )
+#     assert await api._async_query(QUERY_TYPE_API, "func") == {"test": "test"}

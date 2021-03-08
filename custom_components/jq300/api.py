@@ -13,7 +13,7 @@ import asyncio
 import json
 import logging
 from datetime import timedelta
-from time import monotonic
+from time import monotonic, sleep
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
@@ -26,8 +26,10 @@ from homeassistant.const import (
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
+    CONF_UNIT_OF_MEASUREMENT,
     HTTP_OK,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
 from requests import PreparedRequest
 
@@ -81,10 +83,10 @@ class ApiError(Exception):
 class Jq300Account:
     """JQ-300 cloud account controller."""
 
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
-        hass,
+        hass: HomeAssistant,
         session: ClientSession,
         username,
         password,
@@ -112,15 +114,13 @@ class Jq300Account:
         self._sensors_raw = {}
         self._units = {}
 
-        for sensor_id, data in BINARY_SENSORS.items():
-            self._units[sensor_id] = data[1]
         for sensor_id, data in SENSORS.items():
             if (receive_tvoc_in_ppb and sensor_id == 8) or (
                 receive_hcho_in_ppb and sensor_id == 7
             ):
                 self._units[sensor_id] = CONCENTRATION_PARTS_PER_BILLION
             else:
-                self._units[sensor_id] = data[1]
+                self._units[sensor_id] = data.get(CONF_UNIT_OF_MEASUREMENT)
 
     @property
     def unique_id(self) -> str:
@@ -150,13 +150,13 @@ class Jq300Account:
     @staticmethod
     def _get_useragent(query_type) -> str:
         """Generate User-Agent for requests."""
-        # pylint: disable=R1705
         if query_type == QUERY_TYPE_API:
             return USERAGENT_API
-        elif query_type == QUERY_TYPE_DEVICE:
+
+        if query_type == QUERY_TYPE_DEVICE:
             return USERAGENT_DEVICE
-        else:
-            raise ValueError('Unknown query type "%s"' % query_type)
+
+        raise ValueError('Unknown query type "%s"' % query_type)
 
     def _add_url_params(self, url: str, extra_params: dict):
         """Add params to URL."""
@@ -181,7 +181,7 @@ class Jq300Account:
             url = self._add_url_params(url, extra_params)
         return url
 
-    # pylint: disable=R0911,R0912
+    # pylint: disable=too-many-return-statements,too-many-branches
     async def _async_query(
         self, query_type, function: str, extra_params=None
     ) -> Optional[dict]:
@@ -207,7 +207,7 @@ class Jq300Account:
             timeout=QUERY_TIMEOUT,
         ) as resp:
             if resp.status != HTTP_OK:
-                raise ApiError(f"Invalid response from Gismeteo API: {resp.status}")
+                raise ApiError(f"Invalid response from JQ300 API: {resp.status}")
             _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
             ret = await resp.text()
 
@@ -218,7 +218,6 @@ class Jq300Account:
             _LOGGER.debug(MSG_GENERIC_FAIL)
             return None
 
-        _LOGGER.debug(response.content)  # todo: remove
         if response.content.startswith(b"jsoncallback("):
             response = json.loads(response.content[13:-1])
         else:
@@ -356,11 +355,14 @@ class Jq300Account:
             _LOGGER.warning("Unknown message type: %s", message)
 
     def _get_devices_mqtt_topics(self, device_ids: list) -> list:
-        devs = self.update_devices()
-        topics = list(
-            (devs[dev_id]["deviceToken"] for dev_id in device_ids) if devs else ()
-        )
-        return topics
+        if not self.devices:
+            self.hass.add_job(self.async_update_devices())
+            sleep(1)
+
+        if not self.devices:
+            return []
+
+        return list(self.devices[dev_id]["deviceToken"] for dev_id in device_ids)
 
     @property
     def active_devices(self) -> list:
@@ -455,7 +457,7 @@ class Jq300Account:
 
         # pylint: disable=logging-too-many-args
         _LOGGER.debug(
-            "Availability: %s (account) AND (%s (device %s) OR %s (timeout)) = $s",
+            "Availability: %s (account) AND (%s (device %s) OR %s (timeout)) = %s",
             self.available,
             device_available,
             device_id,

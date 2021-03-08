@@ -40,7 +40,7 @@ class Jq300Entity(Entity):
 
         self.entity_id = entity_id
 
-        if account.devices is None:
+        if account.devices == {}:
             raise PlatformNotReady
 
         self._name = None
