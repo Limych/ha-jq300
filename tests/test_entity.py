@@ -4,8 +4,8 @@
 from homeassistant.exceptions import PlatformNotReady
 from pytest import raises
 
-from custom_components.jq300 import VERSION, Jq300Account
-from custom_components.jq300.const import ATTRIBUTION, DOMAIN, NAME
+from custom_components.jq300 import Jq300Account
+from custom_components.jq300.const import ATTRIBUTION, DOMAIN, NAME, VERSION
 from custom_components.jq300.entity import Jq300Entity
 
 

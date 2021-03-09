@@ -30,7 +30,6 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     STARTUP_MESSAGE,
-    VERSION,
 )
 from .util import mask_email
 
@@ -78,7 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config = hass.data[DOMAIN][CONF_YAML]
     else:
         config = entry.data.copy()
-        config.extend(entry.options)
+        config.update(entry.options)
 
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
@@ -107,7 +106,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         account.active_devices.append(device_id)
         devs[name] = device_id
 
-    hass.data[DOMAIN][entry.unique_id] = {
+    hass.data[DOMAIN][entry.entry_id] = {
         CONF_ACCOUNT_CONTROLLER: account,
         CONF_DEVICES: devs,
     }

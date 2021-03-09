@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up binary_sensor platform."""
-    data = hass.data[DOMAIN][entry.unique_id]
+    data = hass.data[DOMAIN][entry.entry_id]
     account = data[CONF_ACCOUNT_CONTROLLER]  # type: Jq300Account
     devices = data[CONF_DEVICES]  # type: dict
 
