@@ -114,6 +114,9 @@ class Jq300Account:
         self._sensors_raw = {}
         self._units = {}
 
+        for sensor_id, data in BINARY_SENSORS.items():
+            self._units[sensor_id] = None
+
         for sensor_id, data in SENSORS.items():
             if (receive_tvoc_in_ppb and sensor_id == 8) or (
                 receive_hcho_in_ppb and sensor_id == 7
@@ -200,16 +203,19 @@ class Jq300Account:
         if extra_params:
             params.update(extra_params)
 
-        async with self._session.get(
-            url,
-            params=params,
-            headers={"User-Agent": self._get_useragent(query_type)},
-            timeout=QUERY_TIMEOUT,
-        ) as resp:
-            if resp.status != HTTP_OK:
-                raise ApiError(f"Invalid response from JQ300 API: {resp.status}")
-            _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
-            ret = await resp.text()
+        try:
+            ret = self._session.get(
+                url,
+                params=params,
+                headers={"User-Agent": self._get_useragent(query_type)},
+                timeout=QUERY_TIMEOUT,
+            )
+            _LOGGER.debug("_query ret %s", ret.status_code)
+
+        # pylint: disable=broad-except
+        except Exception as err_msg:
+            _LOGGER.error("Error! %s", err_msg)
+            return None
 
         if ret.status_code == HTTP_OK or ret.status_code == HTTP_NO_CONTENT:
             response = ret
@@ -246,7 +252,7 @@ class Jq300Account:
         """Return True if connected to account."""
         return self.params["uid"] > 0
 
-    def connect(self, force: bool = False) -> bool:
+    async def async_connect(self, force: bool = False) -> bool:
         """(Re)Connect to account and return connection status."""
         if not force and self.params["uid"] > 0:
             return True
@@ -255,7 +261,7 @@ class Jq300Account:
 
         self.params["uid"] = -1000
         self.params["safeToken"] = "anonymous"
-        ret = self._async_query(
+        ret = await self._async_query(
             QUERY_TYPE_API,
             "loginByEmail",
             extra_params={
@@ -266,7 +272,7 @@ class Jq300Account:
             },
         )
         if not ret:
-            return self.connect(True) if not force else False
+            return await self.async_connect(True) if not force else False
 
         self.params["uid"] = ret["uid"]
         self.params["safeToken"] = ret["safeToken"]
@@ -398,7 +404,7 @@ class Jq300Account:
         self, force=False
     ) -> Optional[Dict[int, Dict[str, Any]]]:
         """Update available devices."""
-        if not self.connect():
+        if not await self.async_connect():
             _LOGGER.error("Can't connect to cloud.")
             return None
 
@@ -519,7 +525,7 @@ class Jq300Account:
         start = monotonic()
         try:
             with async_timeout.timeout(timeout):
-                await self.async_update_sensors
+                await self.async_update_sensors()
 
         except asyncio.TimeoutError as err:
             _LOGGER.error("Timeout fetching %s device's sensors", self.name_secure)
