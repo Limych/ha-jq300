@@ -2,17 +2,22 @@
 """Helper script to update requirements."""
 import json
 import os
+import sys
 
 import requests
 
 ROOT = os.path.dirname(os.path.abspath(f"{__file__}/.."))
 
 PKG_PATH = PACKAGE = None
-for dir in os.listdir(f"{ROOT}/custom_components"):
-    if dir != "__pycache__" and os.path.isdir(f"{ROOT}/custom_components/{dir}"):
-        PACKAGE = dir
+for fname in os.listdir(f"{ROOT}/custom_components"):
+    if fname != "__pycache__" and os.path.isdir(f"{ROOT}/custom_components/{fname}"):
+        PACKAGE = fname
         PKG_PATH = f"{ROOT}/custom_components/{PACKAGE}"
         break
+
+if not PACKAGE:
+    print("Package not found.")
+    sys.exit(1)
 
 
 def get_package(requre: str) -> str:
