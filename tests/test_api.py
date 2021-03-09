@@ -19,7 +19,15 @@ async def test_init(hass: HomeAssistant):
     session = async_get_clientsession(hass)
     api = Jq300Account(hass, session, "test@email.com", "test_password", False, False)
 
-    expected_units = {4: "°C", 5: "%", 6: "µg/m³", 7: "mg/m³", 8: "mg/m³", 9: "ppm"}
+    expected_units = {
+        1: None,
+        4: "°C",
+        5: "%",
+        6: "µg/m³",
+        7: "mg/m³",
+        8: "mg/m³",
+        9: "ppm",
+    }
 
     assert isinstance(USERAGENT_API, str) and len(USERAGENT_API) > 20
     assert isinstance(USERAGENT_DEVICE, str) and len(USERAGENT_DEVICE) > 20
