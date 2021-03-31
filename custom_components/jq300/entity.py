@@ -11,20 +11,12 @@ https://github.com/Limych/ha-jq300
 
 import logging
 
-from homeassistant.const import ATTR_ATTRIBUTION, ATTR_DEVICE_ID
+from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity
 
-from custom_components.jq300 import Jq300Account
-
-from .const import (
-    ATTR_DEVICE_BRAND,
-    ATTR_DEVICE_MODEL,
-    ATTRIBUTION,
-    DOMAIN,
-    NAME,
-    VERSION,
-)
+from .api import Jq300Account
+from .const import ATTRIBUTION, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,16 +83,14 @@ class Jq300Entity(Entity):
         """Return the device info."""
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
-            "name": NAME,
-            "model": VERSION,
+            "name": self._name,
+            "manufacturer": self._device.get("brandname"),
+            "model": self._device.get("pt_model"),
         }
 
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
         return {
-            ATTR_DEVICE_BRAND: self._device.get("brandname"),
-            ATTR_DEVICE_MODEL: self._device.get("pt_model"),
-            ATTR_DEVICE_ID: self._device.get("deviceid"),
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }

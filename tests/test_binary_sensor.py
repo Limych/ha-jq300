@@ -6,7 +6,7 @@ from custom_components.jq300.binary_sensor import Jq300BinarySensor
 
 
 async def test_entity_initialization(mock_account: Jq300Account):
-    """Test sensor initialization."""
+    """Test entity initialization."""
     mock_account._devices = {123: {"pt_name": "Kitchen"}}
 
     entity = Jq300BinarySensor("test", mock_account, 123, 1, False)

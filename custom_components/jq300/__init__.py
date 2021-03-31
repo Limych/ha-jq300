@@ -20,6 +20,7 @@ from homeassistant.const import CONF_DEVICES, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
 
 from .api import Jq300Account
 from .const import (
@@ -52,16 +53,17 @@ ACCOUNT_SCHEMA = vol.Schema(
 CONFIG_SCHEMA = vol.Schema({DOMAIN: ACCOUNT_SCHEMA}, extra=vol.ALLOW_EXTRA)
 
 
-async def async_setup(hass: HomeAssistant, config):
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this integration using YAML."""
+    # Print startup message
+    if DOMAIN not in hass.data:
+        _LOGGER.info(STARTUP_MESSAGE)
+        hass.data[DOMAIN] = {}
+
     if DOMAIN not in config:
         return True
 
-    # Print startup message
-    _LOGGER.info(STARTUP_MESSAGE)
-    hass.data.setdefault(DOMAIN, {})
-
-    hass.data[DOMAIN][CONF_YAML] = config.get(DOMAIN)
+    hass.data[DOMAIN][CONF_YAML] = config[DOMAIN]
     hass.async_create_task(
         hass.config_entries.flow.async_init(
             DOMAIN, context={"source": SOURCE_IMPORT}, data={}

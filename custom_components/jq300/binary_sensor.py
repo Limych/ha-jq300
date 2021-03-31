@@ -13,7 +13,9 @@ import asyncio
 import logging
 
 from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_DEVICES, CONF_ICON, CONF_NAME
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import async_generate_entity_id
 
 from .api import Jq300Account
@@ -23,7 +25,9 @@ from .entity import Jq300Entity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+) -> bool:
     """Set up binary_sensor platform."""
     data = hass.data[DOMAIN][entry.entry_id]
     account = data[CONF_ACCOUNT_CONTROLLER]  # type: Jq300Account

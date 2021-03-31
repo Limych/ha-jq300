@@ -9,16 +9,13 @@ from custom_components.jq300.sensor import Jq300Sensor
 
 
 async def test_entity_initialization(mock_account: Jq300Account):
-    """Test sensor initialization."""
+    """Test entity initialization."""
     mock_account._devices = {123: {"pt_name": "Kitchen"}}
 
     entity = Jq300Sensor("test", mock_account, 123, 7, 12)
 
     expected_attributes = {
         "attribution": ATTRIBUTION,
-        "device_brand": None,
-        "device_id": None,
-        "device_model": None,
         "raw_state": 12,
     }
 
