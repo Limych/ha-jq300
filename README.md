@@ -163,11 +163,11 @@ See separate [license file](LICENSE.md) for full text.
 
 [component]: https://github.com/Limych/ha-jq300
 [commits-shield]: https://img.shields.io/github/commit-activity/y/Limych/ha-jq300.svg?style=popout
-[commits]: https://github.com/Limych/ha-jq300/commits/master
+[commits]: https://github.com/Limych/ha-jq300/commits/dev
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
-[logoimg]: https://github.com/Limych/ha-jq300/raw/master/logo.jpeg
-[exampleimg]: https://github.com/Limych/ha-jq300/raw/master/example.png
+[logoimg]: https://github.com/Limych/ha-jq300/raw/dev/logo.jpeg
+[exampleimg]: https://github.com/Limych/ha-jq300/raw/dev/example.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/t/jq-300-200-100-indoor-air-quality-meter/189098
 [license]: https://github.com/Limych/ha-jq300/blob/main/LICENSE.md
