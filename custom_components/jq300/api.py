@@ -13,7 +13,7 @@ import asyncio
 import json
 import logging
 from datetime import timedelta
-from time import monotonic, sleep
+from time import monotonic
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
@@ -184,10 +184,16 @@ class Jq300Account:
             url = self._add_url_params(url, extra_params)
         return url
 
-    # pylint: disable=too-many-return-statements,too-many-branches
     async def _async_query(
         self, query_type, function: str, extra_params=None
     ) -> Optional[dict]:
+        """Query data from cloud."""
+        return await self.hass.async_add_executor_job(
+            self._query, query_type, function, extra_params
+        )
+
+    # pylint: disable=too-many-return-statements,too-many-branches
+    def _query(self, query_type, function: str, extra_params=None) -> Optional[dict]:
         """Query data from cloud."""
         url = self._get_url(query_type, function)
         _LOGGER.debug("Requesting URL %s", url)
@@ -252,7 +258,7 @@ class Jq300Account:
         """Return True if connected to account."""
         return self.params["uid"] > 0
 
-    async def async_connect(self, force: bool = False) -> bool:
+    def connect(self, force: bool = False) -> bool:
         """(Re)Connect to account and return connection status."""
         if not force and self.params["uid"] > 0:
             return True
@@ -261,7 +267,7 @@ class Jq300Account:
 
         self.params["uid"] = -1000
         self.params["safeToken"] = "anonymous"
-        ret = await self._async_query(
+        ret = self._query(
             QUERY_TYPE_API,
             "loginByEmail",
             extra_params={
@@ -272,7 +278,7 @@ class Jq300Account:
             },
         )
         if not ret:
-            return await self.async_connect(True) if not force else False
+            return self.connect(True) if not force else False
 
         self.params["uid"] = ret["uid"]
         self.params["safeToken"] = ret["safeToken"]
@@ -347,6 +353,7 @@ class Jq300Account:
                 int(dt_util.now().timestamp()),
                 json.loads(message["content"]),
             )
+            self.devices[device_id]["onlinets"] = monotonic()
 
         elif message["type"] == "C":
             if self.devices.get(device_id) is None:
@@ -362,8 +369,7 @@ class Jq300Account:
 
     def _get_devices_mqtt_topics(self, device_ids: list) -> list:
         if not self.devices:
-            self.hass.add_job(self.async_update_devices())
-            sleep(1)
+            self.update_devices()
 
         if not self.devices:
             return []
@@ -400,11 +406,9 @@ class Jq300Account:
         """Get available devices."""
         return self._devices
 
-    async def async_update_devices(
-        self, force=False
-    ) -> Optional[Dict[int, Dict[str, Any]]]:
-        """Update available devices."""
-        if not await self.async_connect():
+    def update_devices(self, force=False) -> Optional[Dict[int, Dict[str, Any]]]:
+        """Update available devices from cloud."""
+        if not self.connect():
             _LOGGER.error("Can't connect to cloud.")
             return None
 
@@ -413,7 +417,7 @@ class Jq300Account:
 
         _LOGGER.debug("Updating devices list for account %s", self.name_secure)
 
-        ret = await self._async_query(
+        ret = self._query(
             QUERY_TYPE_API,
             "deviceManager",
             extra_params={
@@ -423,7 +427,7 @@ class Jq300Account:
             },
         )
         if not ret:
-            return await self.async_update_devices(True) if not force else None
+            return self.update_devices(True) if not force else None
 
         tstamp = int(dt_util.now().timestamp() * 1000)
         for dev in ret["deviceInfoBodyList"]:
@@ -435,24 +439,6 @@ class Jq300Account:
             self._sensors.setdefault(device_id, {})
 
         return self._devices
-
-    async def async_update_devices_or_timeout(self, timeout=UPDATE_TIMEOUT):
-        """Get available devices list from cloud."""
-        start = monotonic()
-        try:
-            with async_timeout.timeout(timeout):
-                return await self.async_update_devices()
-
-        except TimeoutError as exc:
-            _LOGGER.error("Timeout fetching %s devices list", self.name_secure)
-            raise exc
-
-        finally:
-            _LOGGER.debug(
-                "Finished fetching %s devices list in %.3f seconds",
-                self.name_secure,
-                monotonic() - start,
-            )
 
     def device_available(self, device_id) -> bool:
         """Return True if device is available."""
@@ -493,8 +479,12 @@ class Jq300Account:
         self._sensors[device_id][ts_now] = res
         self._sensors_raw[device_id] = res
 
-    @Throttle(timedelta(minutes=10))
     async def async_update_sensors(self):
+        """Update current states of all active devices for account."""
+        return await self.hass.async_add_executor_job(self.update_sensors)
+
+    @Throttle(timedelta(minutes=10))
+    def update_sensors(self):
         """Update current states of all active devices for account."""
         _LOGGER.debug("Updating sensors state for account %s", self.name_secure)
 
@@ -504,7 +494,7 @@ class Jq300Account:
             if self.get_sensors_raw(device_id) is not None:
                 continue
 
-            ret = await self._async_query(
+            ret = self._query(
                 QUERY_TYPE_DEVICE,
                 "list",
                 extra_params={

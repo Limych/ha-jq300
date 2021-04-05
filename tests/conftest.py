@@ -54,18 +54,14 @@ def bypass_get_data_fixture():
         "test_device": {"pt_name": "test_name"},
         "another_device": {"pt_name": "another_name"},
     }
-    with patch.object(
-        Jq300Account, "async_update_devices_or_timeout", return_value=res
-    ):
+    with patch.object(Jq300Account, "update_devices", return_value=res):
         yield
 
 
-# In this fixture, we are forcing calls to async_get_data to raise an Exception. This is useful
-# for exception handling.
+# In this fixture, we are forcing calls to async_get_data to raise an Exception.
+# This is useful for exception handling.
 @pytest.fixture(name="error_on_get_data")
 def error_get_data_fixture():
     """Simulate error when retrieving data from API."""
-    with patch.object(
-        Jq300Account, "async_update_devices_or_timeout", side_effect=TimeoutError
-    ):
+    with patch.object(Jq300Account, "update_devices", side_effect=TimeoutError):
         yield

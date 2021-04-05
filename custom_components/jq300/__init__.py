@@ -13,6 +13,7 @@ import asyncio
 import logging
 from datetime import timedelta
 
+import async_timeout
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -31,6 +32,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     STARTUP_MESSAGE,
+    UPDATE_TIMEOUT,
 )
 from .util import mask_email
 
@@ -95,7 +97,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     try:
-        devices = await account.async_update_devices_or_timeout()
+        with async_timeout.timeout(UPDATE_TIMEOUT):
+            devices = await hass.async_add_executor_job(account.update_devices)
     except TimeoutError as exc:
         raise ConfigEntryNotReady from exc
 
