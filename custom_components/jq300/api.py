@@ -459,11 +459,11 @@ class Jq300Account:
         dev = self.devices.get(device_id, {})
         device_available = dev.get("onlinestat") == 1
         device_timeout = (monotonic() - dev.get("onlinets", 0)) <= AVAILABLE_TIMEOUT
-        online = self.available and (device_available or device_timeout)
+        online = self.available and device_available and device_timeout
 
         # pylint: disable=logging-too-many-args
         _LOGGER.debug(
-            "Availability: %s (account) AND (%s (device %s) OR %s (timeout)) = %s",
+            "Availability: %s (account) AND %s (device %s) AND %s (timeout) = %s",
             self.available,
             device_available,
             device_id,
