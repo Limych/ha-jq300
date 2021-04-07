@@ -49,9 +49,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
             await asyncio.sleep(3)
             sensors = account.get_sensors(dev_id)
 
+        dev_model = account.devices.get(dev_id, {}).get("pt_model")
+        is_jq300 = dev_model == "JQ_300"
+        is_jq200 = is_jq300 or (dev_model == "JQ300")
+
         for sensor_id, sensor_state in sensors.items():
-            if sensor_id not in SENSORS.keys():
+            if (
+                sensor_id not in SENSORS.keys()
+                or (sensor_id in (4, 5) and not is_jq200)
+                or (sensor_id == 6 and not is_jq300)
+            ):
                 continue
+
             ent_name = SENSORS[sensor_id].get(
                 CONF_ENTITY_ID, SENSORS[sensor_id][CONF_NAME]
             )
