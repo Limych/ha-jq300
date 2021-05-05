@@ -21,8 +21,8 @@ async def test_entity_initialization(mock_account: Jq300Account):
     entity = Jq300Entity("test", mock_account, 123, 7, 12)
 
     expected_device_info = {
-        "identifiers": {(DOMAIN, "test@email.com-123-7")},
-        "name": None,
+        "identifiers": {(DOMAIN, "test@email.com", 123)},
+        "name": "Kitchen",
         "manufacturer": "qwe",
         "model": "asd",
     }

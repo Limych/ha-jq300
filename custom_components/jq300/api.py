@@ -14,13 +14,12 @@ import json
 import logging
 from datetime import timedelta
 from time import monotonic
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 import async_timeout
 import homeassistant.util.dt as dt_util
 import paho.mqtt.client as mqtt
-import requests
 from aiohttp import ClientSession
 from homeassistant.const import (
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
@@ -49,6 +48,11 @@ from .util import mask_email
 
 _LOGGER = logging.getLogger(__name__)
 
+
+DevicesDictType = Dict[int, Dict[str, Any]]
+SensorsDictType = Dict[str, Union[int, float, bool]]
+
+
 # Error strings
 MSG_GENERIC_FAIL = "Sorry.. Something went wrong..."
 MSG_LOGIN_FAIL = "Account name or password is wrong, please try again"
@@ -72,11 +76,6 @@ USERAGENT_DEVICE = (
 
 class ApiError(Exception):
     """Raised when API request ended in error."""
-
-    def __init__(self, status):
-        """Initialize."""
-        super().__init__(status)
-        self.status = status
 
 
 # pylint: disable=too-many-instance-attributes
@@ -108,7 +107,6 @@ class Jq300Account:
 
         self._mqtt = None
         self._active_devices = []
-        self._session = requests.session()
         self._devices = {}
         self._sensors = {}
         self._sensors_raw = {}
@@ -184,21 +182,13 @@ class Jq300Account:
             url = self._add_url_params(url, extra_params)
         return url
 
+    # pylint: disable=too-many-return-statements,too-many-branches
     async def _async_query(
         self, query_type, function: str, extra_params=None
     ) -> Optional[dict]:
         """Query data from cloud."""
-        return await self.hass.async_add_executor_job(
-            self._query, query_type, function, extra_params
-        )
-
-    # pylint: disable=too-many-return-statements,too-many-branches
-    def _query(self, query_type, function: str, extra_params=None) -> Optional[dict]:
-        """Query data from cloud."""
         url = self._get_url(query_type, function)
         _LOGGER.debug("Requesting URL %s", url)
-
-        response = None
 
         # allow to override params when necessary
         # and update self.params globally for the next connection
@@ -210,30 +200,29 @@ class Jq300Account:
             params.update(extra_params)
 
         try:
-            ret = self._session.get(
+            response = await self._session.get(
                 url,
                 params=params,
                 headers={"User-Agent": self._get_useragent(query_type)},
                 timeout=QUERY_TIMEOUT,
             )
-            _LOGGER.debug("_query ret %s", ret.status_code)
+            _LOGGER.debug("_query ret %s", response.status)
 
         # pylint: disable=broad-except
-        except Exception as err_msg:
+        except Exception as err_msg:  # pragma: no cover
             _LOGGER.error("Error! %s", err_msg)
             return None
 
-        if ret.status_code == HTTP_OK or ret.status_code == HTTP_NO_CONTENT:
-            response = ret
-
-        if response is None:  # pragma: no cover
+        if (
+            response.status != HTTP_OK and response.status != HTTP_NO_CONTENT
+        ):  # pragma: no cover
             _LOGGER.debug(MSG_GENERIC_FAIL)
             return None
 
-        if response.content.startswith(b"jsoncallback("):
-            response = json.loads(response.content[13:-1])
-        else:
-            response = json.loads(response.content)
+        content = await response.read()
+        response = json.loads(
+            content[13:-1] if content.startswith(b"jsoncallback(") else content
+        )
 
         if query_type == QUERY_TYPE_API:
             if response["code"] == 102:
@@ -258,7 +247,7 @@ class Jq300Account:
         """Return True if connected to account."""
         return self.params["uid"] > 0
 
-    def connect(self, force: bool = False) -> bool:
+    async def async_connect(self, force: bool = False) -> bool:
         """(Re)Connect to account and return connection status."""
         if not force and self.params["uid"] > 0:
             return True
@@ -267,7 +256,7 @@ class Jq300Account:
 
         self.params["uid"] = -1000
         self.params["safeToken"] = "anonymous"
-        ret = self._query(
+        ret = await self._async_query(
             QUERY_TYPE_API,
             "loginByEmail",
             extra_params={
@@ -278,7 +267,7 @@ class Jq300Account:
             },
         )
         if not ret:
-            return self.connect(True) if not force else False
+            return await self.async_connect(True) if not force else False
 
         self.params["uid"] = ret["uid"]
         self.params["safeToken"] = ret["safeToken"]
@@ -297,7 +286,9 @@ class Jq300Account:
         def on_connect_callback(client, userdata, flags, res):
             _LOGGER.debug("Connected to MQTT")
             try:
-                self._mqtt_subscribe(self._get_devices_mqtt_topics(self.active_devices))
+                self._mqtt_subscribe(
+                    self._get_devices_mqtt_topics(self._active_devices)
+                )
             except Exception as exc:  # pylint: disable=broad-except
                 logging.exception(exc)
 
@@ -369,20 +360,21 @@ class Jq300Account:
 
     def _get_devices_mqtt_topics(self, device_ids: list) -> list:
         if not self.devices:
-            self.update_devices()
-
-        if not self.devices:
             return []
 
-        return list(self.devices[dev_id]["deviceToken"] for dev_id in device_ids)
+        return list(
+            self.devices[dev_id]["deviceToken"]
+            for dev_id in device_ids
+            if dev_id in self.devices
+        )
 
     @property
-    def active_devices(self) -> list:
+    def active_devices(self) -> List[int]:
         """Get list of devices we want to fetch sensors data."""
-        return self._active_devices
+        return self._active_devices.copy()
 
     @active_devices.setter
-    def active_devices(self, devices: list):
+    def active_devices(self, devices: List[int]):
         """Set list of devices we want to fetch sensors data."""
         unsub = self._get_devices_mqtt_topics(
             list(set(self._active_devices) - set(devices))
@@ -396,19 +388,21 @@ class Jq300Account:
         for device_id in devices:
             self._sensors.setdefault(device_id, {})
 
-        _LOGGER.debug("Unsubscribe from MQTT topics: %s", ", ".join(unsub))
-        self._mqtt_unsubscribe(unsub)
-        _LOGGER.debug("Subscribe for new MQTT topics: %s", ", ".join(sub))
-        self._mqtt_subscribe(sub)
+        if unsub:
+            _LOGGER.debug("Unsubscribe from MQTT topics: %s", ", ".join(unsub))
+            self._mqtt_unsubscribe(unsub)
+        if sub:
+            _LOGGER.debug("Subscribe for new MQTT topics: %s", ", ".join(sub))
+            self._mqtt_subscribe(sub)
 
     @property
-    def devices(self) -> dict:
+    def devices(self) -> DevicesDictType:
         """Get available devices."""
         return self._devices
 
-    def update_devices(self, force=False) -> Optional[Dict[int, Dict[str, Any]]]:
+    async def async_update_devices(self, force=False) -> Optional[DevicesDictType]:
         """Update available devices from cloud."""
-        if not self.connect():
+        if not await self.async_connect():
             _LOGGER.error("Can't connect to cloud.")
             return None
 
@@ -417,7 +411,7 @@ class Jq300Account:
 
         _LOGGER.debug("Updating devices list for account %s", self.name_secure)
 
-        ret = self._query(
+        ret = await self._async_query(
             QUERY_TYPE_API,
             "deviceManager",
             extra_params={
@@ -427,7 +421,7 @@ class Jq300Account:
             },
         )
         if not ret:
-            return self.update_devices(True) if not force else None
+            return await self.async_update_devices(True) if not force else None
 
         tstamp = int(dt_util.now().timestamp() * 1000)
         for dev in ret["deviceInfoBodyList"]:
@@ -479,22 +473,84 @@ class Jq300Account:
         self._sensors[device_id][ts_now] = res
         self._sensors_raw[device_id] = res
 
-    async def async_update_sensors(self):
-        """Update current states of all active devices for account."""
-        return await self.hass.async_add_executor_job(self.update_sensors)
+    def get_sensors_raw(self, device_id) -> Optional[SensorsDictType]:
+        """Get raw values of states of available sensors for device."""
+        return self._sensors_raw.get(device_id)
+
+    def get_sensors(self, device_id) -> Optional[SensorsDictType]:
+        """Get states of available sensors for device."""
+        ts_now = int(dt_util.now().timestamp())
+        ts_overdue = ts_now - SENSORS_FILTER_FRAME.total_seconds()
+
+        self._sensors.setdefault(device_id, {})
+
+        # Filter historic states
+        res = {}
+        ts_min = max(
+            list(filter(lambda x: x <= ts_overdue, self._sensors[device_id].keys()))
+            or {ts_overdue}
+        )
+        for m_ts, val in self._sensors[device_id].items():
+            if m_ts >= ts_min:
+                res[m_ts] = val
+        self._sensors[device_id] = res
+
+        if not self._sensors[device_id]:
+            return None
+
+        # Calculate average state values
+        res = {}
+        last_ts = ts_overdue
+        last_data: Dict[int, float] = {}
+        for sensor_id in self._sensors_raw[device_id]:
+            res.setdefault(sensor_id, 0)
+            last_data.setdefault(sensor_id, 0)
+
+        # Sum values
+        values = list(self._sensors[device_id].items()).copy()
+        for m_ts, data in values:
+            val_t = m_ts - last_ts
+            if val_t > 0:
+                for sensor_id, val in last_data.items():
+                    res[sensor_id] += val * val_t
+            last_ts = max(m_ts, ts_overdue)
+            last_data = data
+
+        # Add last values
+        val_t = ts_now - last_ts + 1
+        for sensor_id, val in last_data.items():
+            res[sensor_id] += val * val_t
+
+        # Average and round
+        length = max(
+            1, ts_now - max(min(self._sensors[device_id].keys()), ts_overdue) + 1
+        )
+        for sensor_id in res:
+            rnd = SENSORS.get(sensor_id, {}).get(CONF_PRECISION, 0)
+            res[sensor_id] = (
+                self._sensors_raw[device_id][1]
+                if sensor_id == 1
+                else int(res[sensor_id] / length)
+                if rnd == 0
+                or self._units[sensor_id]
+                in (CONCENTRATION_PARTS_PER_MILLION, CONCENTRATION_PARTS_PER_BILLION)
+                else round(res[sensor_id] / length, rnd)
+            )
+
+        return res
 
     @Throttle(timedelta(minutes=10))
-    def update_sensors(self):
+    async def async_update_sensors(self):
         """Update current states of all active devices for account."""
         _LOGGER.debug("Updating sensors state for account %s", self.name_secure)
 
         ts_now = int(dt_util.now().timestamp())
 
-        for device_id in self.active_devices:
+        for device_id in self._active_devices:
             if self.get_sensors_raw(device_id) is not None:
                 continue
 
-            ret = self._query(
+            ret = await self._async_query(
                 QUERY_TYPE_DEVICE,
                 "list",
                 extra_params={
@@ -509,7 +565,6 @@ class Jq300Account:
 
             self._extract_sensors_data(device_id, ts_now, ret["deviceValueVos"])
 
-    @Throttle(timedelta(minutes=10))
     async def async_update_sensors_or_timeout(self, timeout=UPDATE_TIMEOUT):
         """Update current states of all active devices for account."""
         start = monotonic()
@@ -527,70 +582,3 @@ class Jq300Account:
                 self.name_secure,
                 monotonic() - start,
             )
-
-    def get_sensors_raw(self, device_id) -> Optional[dict]:
-        """Get raw values of states of available sensors for device."""
-        return self._sensors_raw.get(device_id)
-
-    def get_sensors(self, device_id) -> Optional[dict]:
-        """Get states of available sensors for device."""
-        ts_now = int(dt_util.now().timestamp())
-        ts_overdue = ts_now - SENSORS_FILTER_FRAME.total_seconds()
-
-        self._sensors.setdefault(device_id, {})
-
-        # Filter historic states
-        res = {}
-        ts_min = max(
-            list(filter(lambda x: x <= ts_overdue, self._sensors[device_id].keys()))
-            or {ts_overdue}
-        )
-        # _LOGGER.debug('ts_overdue: %s; ts_min: %s', ts_overdue, ts_min)
-        for m_ts, val in self._sensors[device_id].items():
-            if m_ts >= ts_min:
-                res[m_ts] = val
-        self._sensors[device_id] = res
-
-        if not self._sensors[device_id]:
-            return None
-
-        # Calculate average state values
-        res = {}
-        last_ts = ts_overdue
-        last_data: Dict[int, float] = {}
-        for sensor_id in self._sensors_raw[device_id]:
-            res.setdefault(sensor_id, 0)
-            last_data.setdefault(sensor_id, 0)
-        # Sum values
-        for m_ts, data in self._sensors[device_id].items():
-            val_t = m_ts - last_ts
-            if val_t > 0:
-                # _LOGGER.debug('%s: %s [%s]', m_ts, data, (m_ts - last_ts))
-                for sensor_id, val in last_data.items():
-                    res[sensor_id] += val * val_t
-            last_ts = max(m_ts, ts_overdue)
-            last_data = data
-        # Add last values
-        # _LOGGER.debug('%s: %s [%s]', last_ts, last_data,
-        #               max(ts_now - last_ts, 1))
-        val_t = ts_now - last_ts + 1
-        for sensor_id, val in last_data.items():
-            res[sensor_id] += val * val_t
-        # Average and round
-        length = max(
-            1, ts_now - max(min(self._sensors[device_id].keys()), ts_overdue) + 1
-        )
-        # _LOGGER.debug('Averaging: %s / %s', res, length)
-        for sensor_id in res:
-            rnd = SENSORS.get(sensor_id, {}).get(CONF_PRECISION, 0)
-            res[sensor_id] = (
-                self._sensors_raw[device_id][1]
-                if sensor_id == 1
-                else int(res[sensor_id] / length)
-                if rnd == 0
-                or self._units[sensor_id]
-                in (CONCENTRATION_PARTS_PER_MILLION, CONCENTRATION_PARTS_PER_BILLION)
-                else round(res[sensor_id] / length, rnd)
-            )
-        # _LOGGER.debug('Result: %s', res)
-        return res

@@ -1,0 +1,25 @@
+{
+  "action": "deviceManager",
+  "code": 2000,
+  "deviceInfoBodyList": [
+    {
+      "circleid": "972f9d2757bc22e416581187",
+      "pt_name": "Bedroom",
+      "pt_model": "JQ_300",
+      "brandname": "\u54c1\u4f18",
+      "logo": "mocle.png",
+      "onlinestat": 1,
+      "flag": 1,
+      "id": 76184,
+      "deviceid": 43133,
+      "devstatus": 6,
+      "deviceToken": "26E84E117417B97BA417",
+      "status": 1,
+      "href": "/resource/page/hcho/indexPm25.html",
+      "pic": "20161026101634psgscf591477448194",
+      "weburl": "http://market.cmbchina.com/ccard/xyksq/xyksq.html?WT.srch=1&WT.mc_id=N3700BD1057Z074200BZ",
+      "updtime": "1477448195",
+      "repairstatus": null
+    }
+  ]
+}

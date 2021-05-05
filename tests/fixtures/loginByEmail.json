@@ -1,0 +1,8 @@
+{
+  "action": "loginByEmail",
+  "code": 2000,
+  "uid": 71233685,
+  "safeToken": "62576883183513678CAEC18944E1CF20",
+  "expireAt": 0,
+  "systime": 0
+}

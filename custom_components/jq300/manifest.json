@@ -1,15 +1,16 @@
 {
-    "domain": "jq300",
-    "name": "JQ-300/200/100 Indoor Air Quality Meter",
-    "version": "0.8.3.dev0",
-    "documentation": "https://github.com/Limych/ha-jq300",
-    "issue_tracker": "https://github.com/Limych/ha-jq300/issues",
-    "dependencies": [],
-    "config_flow": false,
-    "codeowners": [
-        "@Limych"
-    ],
-    "requirements": [
-        "paho-mqtt==1.5.1"
-    ]
+  "domain": "jq300",
+  "name": "JQ-300/200/100 Indoor Air Quality Meter",
+  "version": "0.8.3.dev0",
+  "documentation": "https://github.com/Limych/ha-jq300",
+  "issue_tracker": "https://github.com/Limych/ha-jq300/issues",
+  "dependencies": [],
+  "config_flow": false,
+  "codeowners": [
+    "@Limych"
+  ],
+  "requirements": [
+    "paho-mqtt==1.5.1"
+  ],
+  "iot_class": "cloud_push"
 }

@@ -98,18 +98,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         with async_timeout.timeout(UPDATE_TIMEOUT):
-            devices = await hass.async_add_executor_job(account.update_devices)
+            devices = await account.async_update_devices()
     except TimeoutError as exc:
         raise ConfigEntryNotReady from exc
 
     devs = {}
+    adevs = []
     for device_id in devices:
         name = devices[device_id]["pt_name"]
         if active_devices and name not in active_devices:
             continue
 
-        account.active_devices.append(device_id)
+        adevs.append(device_id)
         devs[name] = device_id
+
+    account.active_devices = adevs
 
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_ACCOUNT_CONTROLLER: account,

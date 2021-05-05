@@ -1,0 +1,58 @@
+{
+  "returnCode": "0000",
+  "returnMsg": "\u6210\u529f",
+  "timestamp": 0,
+  "deviceValueVos": [
+    {
+      "content": "0",
+      "dptId": 1,
+      "seq": 1
+    },
+    {
+      "content": null,
+      "dptId": 1,
+      "seq": 2
+    },
+    {
+      "content": null,
+      "dptId": 1,
+      "seq": 3
+    },
+    {
+      "content": "25",
+      "dptId": 1,
+      "seq": 4
+    },
+    {
+      "content": "37",
+      "dptId": 1,
+      "seq": 5
+    },
+    {
+      "content": "39",
+      "dptId": 1,
+      "seq": 6
+    },
+    {
+      "content": "0.023",
+      "dptId": 1,
+      "seq": 7
+    },
+    {
+      "content": "0.521",
+      "dptId": 1,
+      "seq": 8
+    },
+    {
+      "content": "421",
+      "dptId": 1,
+      "seq": 9
+    },
+    {
+      "content": "2700",
+      "dptId": 1,
+      "seq": 10
+    }
+  ],
+  "deviceToken": "26E84E117417B97BA417"
+}

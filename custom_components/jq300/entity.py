@@ -82,8 +82,8 @@ class Jq300Entity(Entity):
     def device_info(self):
         """Return the device info."""
         return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._name,
+            "identifiers": {(DOMAIN, self._account.unique_id, self._device_id)},
+            "name": self._device.get("pt_name"),
             "manufacturer": self._device.get("brandname"),
             "model": self._device.get("pt_model"),
         }
