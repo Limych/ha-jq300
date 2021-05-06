@@ -15,6 +15,7 @@
 #
 # See here for more info: https://docs.pytest.org/en/latest/fixture.html (note that
 # pytest includes fixtures OOB which you can use as defined on this page)
+import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -68,5 +69,7 @@ def bypass_get_data_fixture():
 @pytest.fixture(name="error_on_get_data")
 def error_get_data_fixture():
     """Simulate error when retrieving data from API."""
-    with patch.object(Jq300Account, "async_update_devices", side_effect=TimeoutError):
+    with patch.object(
+        Jq300Account, "async_update_devices", side_effect=asyncio.TimeoutError
+    ):
         yield

@@ -99,7 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         with async_timeout.timeout(UPDATE_TIMEOUT):
             devices = await account.async_update_devices()
-    except TimeoutError as exc:
+    except asyncio.TimeoutError as exc:
         raise ConfigEntryNotReady from exc
 
     devs = {}

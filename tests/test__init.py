@@ -32,7 +32,6 @@ async def test_async_setup(hass: HomeAssistant):
     await hass.async_block_till_done()
 
 
-# @patch.object(Jq300Account, '_mqtt_connect')
 async def test_setup_unload_and_reload_entry(hass, bypass_get_data):
     """Test entry setup and unload."""
     # Create a mock entry so we don't have to go through config flow
