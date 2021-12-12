@@ -13,6 +13,7 @@ import asyncio
 import json
 import logging
 from datetime import timedelta
+from http import HTTPStatus
 from time import monotonic
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
@@ -26,7 +27,6 @@ from homeassistant.const import (
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
     CONF_UNIT_OF_MEASUREMENT,
-    HTTP_OK,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
@@ -214,7 +214,7 @@ class Jq300Account:
             return None
 
         if (
-            response.status != HTTP_OK and response.status != HTTP_NO_CONTENT
+            response.status != HTTPStatus.OK and response.status != HTTP_NO_CONTENT
         ):  # pragma: no cover
             _LOGGER.debug(MSG_GENERIC_FAIL)
             return None
