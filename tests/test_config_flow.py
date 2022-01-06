@@ -9,6 +9,11 @@ from custom_components.jq300 import DOMAIN
 from custom_components.jq300.config_flow import Jq300FlowHandler
 
 
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    yield
+
+
 async def test_async_step_import(hass: HomeAssistant):
     """Test a successful config flow import."""
     config = {"some": "data"}
