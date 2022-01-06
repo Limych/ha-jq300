@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "JQ-300/200/100 Indoor Air Quality Meter"
 DOMAIN = "jq300"
-VERSION = "0.9.1"
+VERSION = "0.10.0-alpha"
 ATTRIBUTION = "Data provided by JQ-300 Cloud"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 
@@ -73,8 +73,6 @@ SENSORS_FILTER_FRAME = timedelta(minutes=5)
 QUERY_TIMEOUT = 7  # seconds
 UPDATE_TIMEOUT = 12  # seconds
 AVAILABLE_TIMEOUT = 30  # seconds
-
-HTTP_NO_CONTENT = 204
 
 MWEIGTH_TVOC = 100  # g/mol
 MWEIGTH_HCHO = 30.0260  # g/mol

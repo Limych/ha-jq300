@@ -11,6 +11,7 @@ https://github.com/Limych/ha-jq300
 
 import asyncio
 import logging
+from typing import Optional
 
 from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -68,21 +69,22 @@ class Jq300BinarySensor(Jq300Entity, BinarySensorEntity):
     """A binary sensor implementation for JQ device."""
 
     def __init__(
-        self, entity_id: str, account: Jq300Account, device_id, sensor_id, sensor_state
+        self,
+        entity_id: str,
+        account: Jq300Account,
+        device_id,
+        sensor_id,
+        sensor_state: Optional[bool],
     ):
         """Initialize a binary sensor."""
         super().__init__(entity_id, account, device_id, sensor_id, sensor_state)
 
-        self._name = "{} {}".format(
-            self._device.get("pt_name"), BINARY_SENSORS[sensor_id][CONF_NAME]
+        self._attr_name = (
+            f'{self._device.get("pt_name")} {BINARY_SENSORS[sensor_id][CONF_NAME]}'
         )
-        self._icon = BINARY_SENSORS[sensor_id][CONF_ICON]
-        self._device_class = BINARY_SENSORS[sensor_id].get(CONF_DEVICE_CLASS)
-
-    @property
-    def is_on(self):
-        """Return true if the binary sensor is on."""
-        return bool(self._state)
+        self._attr_icon = BINARY_SENSORS[sensor_id][CONF_ICON]
+        self._attr_device_class = BINARY_SENSORS[sensor_id].get(CONF_DEVICE_CLASS)
+        self._attr_is_on = sensor_state
 
     def update(self):
         """Update the sensor state if it needed."""
@@ -90,8 +92,8 @@ class Jq300BinarySensor(Jq300Entity, BinarySensorEntity):
         if not ret:
             return
 
-        if self._state == ret[self._sensor_id]:
+        if self._attr_is_on == ret[self._sensor_id]:
             return
 
-        self._state = ret[self._sensor_id]
-        _LOGGER.debug("Update state: %s = %s", self.entity_id, self._state)
+        self._attr_is_on = ret[self._sensor_id]
+        _LOGGER.debug("Update state: %s = %s", self.entity_id, self._attr_is_on)

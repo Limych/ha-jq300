@@ -2,17 +2,19 @@
 """The test for the sensor platform."""
 
 import homeassistant.util.dt as dt_util
+from homeassistant.core import HomeAssistant
 
 from custom_components.jq300 import Jq300Account
 from custom_components.jq300.const import ATTRIBUTION
 from custom_components.jq300.sensor import Jq300Sensor
 
 
-async def test_entity_initialization(mock_account: Jq300Account):
+async def test_entity_initialization(hass: HomeAssistant, mock_account: Jq300Account):
     """Test entity initialization."""
     mock_account._devices = {123: {"pt_name": "Kitchen"}}
 
     entity = Jq300Sensor("test", mock_account, 123, 7, 12)
+    entity.hass = hass
 
     expected_attributes = {
         "attribution": ATTRIBUTION,

@@ -35,58 +35,26 @@ class Jq300Entity(Entity):
         if account.devices == {}:
             raise PlatformNotReady
 
-        self._name = None
-        self._icon = None
         self._account = account
         self._device = account.devices.get(device_id, {})
         self._device_id = device_id
-        self._unique_id = "{}-{}-{}".format(
-            self._account.unique_id, device_id, sensor_id
-        )
         self._sensor_id = sensor_id
-        self._state = sensor_state
 
-        self._device_class = None
-
-    @property
-    def unique_id(self):
-        """Return a unique ID to use for this entity."""
-        return self._unique_id
-
-    @property
-    def name(self):
-        """Return the name of the binary sensor."""
-        return self._name
-
-    @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return self._icon
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._account.device_available(self._device_id)
-
-    @property
-    def should_poll(self) -> bool:
-        """Return the polling state."""
-        return True
-
-    @property
-    def device_class(self):
-        """Return the class of the sensor."""
-        return self._device_class
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
+        self._attr_unique_id = f"{self._account.unique_id}-{device_id}-{sensor_id}"
+        self._attr_name = None
+        self._attr_icon = None
+        self._attr_device_class = None
+        self._attr_device_info = {
             "identifiers": {(DOMAIN, self._account.unique_id, self._device_id)},
             "name": self._device.get("pt_name"),
             "manufacturer": self._device.get("brandname"),
             "model": self._device.get("pt_model"),
         }
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._account.device_available(self._device_id)
 
     @property
     def device_state_attributes(self):

@@ -11,7 +11,11 @@ https://github.com/Limych/ha-jq300
 import asyncio
 import logging
 
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
+from homeassistant.components.sensor import (
+    ENTITY_ID_FORMAT,
+    STATE_CLASS_MEASUREMENT,
+    SensorEntity,
+)
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_DEVICES,
@@ -55,7 +59,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         for sensor_id, sensor_state in sensors.items():
             if (
-                sensor_id not in SENSORS.keys()
+                sensor_id not in SENSORS
                 or (sensor_id in (4, 5) and not is_jq200)
                 or (sensor_id == 6 and not is_jq300)
             ):
@@ -78,7 +82,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 # pylint: disable=too-many-instance-attributes
-class Jq300Sensor(Jq300Entity):
+class Jq300Sensor(Jq300Entity, SensorEntity):
     """A sensor implementation for JQ device."""
 
     def __init__(
@@ -87,30 +91,23 @@ class Jq300Sensor(Jq300Entity):
         """Initialize a sensor."""
         super().__init__(entity_id, account, device_id, sensor_id, sensor_state)
 
-        self._name = "{} {}".format(
-            self._device.get("pt_name"), SENSORS[sensor_id][CONF_NAME]
-        )
-        self._units = self._account.units[sensor_id]
-        self._icon = SENSORS[sensor_id][CONF_ICON]
-        self._device_class = SENSORS[sensor_id].get(CONF_DEVICE_CLASS)
-        self._state_raw = self._state
+        self._raw_value = sensor_state
 
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._state
+        self._attr_icon = SENSORS[sensor_id][CONF_ICON]
+        self._attr_name = (
+            f"{self._device.get('pt_name')} {SENSORS[sensor_id][CONF_NAME]}"
+        )
+        self._attr_device_class = SENSORS[sensor_id].get(CONF_DEVICE_CLASS)
+        self._attr_native_unit_of_measurement = self._account.units[sensor_id]
+        self._attr_native_value = sensor_state
+        self._attr_state_class = STATE_CLASS_MEASUREMENT
 
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
         attr = super().device_state_attributes
-        attr[ATTR_RAW_STATE] = self._state_raw
+        attr[ATTR_RAW_STATE] = self._raw_value
         return attr
-
-    @property
-    def unit_of_measurement(self):
-        """Return the units of measurement."""
-        return self._units
 
     def update(self):
         """Update the sensor state if it needed."""
@@ -118,16 +115,16 @@ class Jq300Sensor(Jq300Entity):
         if not ret:
             return
 
-        state = ret[self._sensor_id]
-        state_raw = self._account.get_sensors_raw(self._device_id)[self._sensor_id]
-        if self._state == state and self._state_raw == state_raw:
+        value = ret[self._sensor_id]
+        raw_value = self._account.get_sensors_raw(self._device_id)[self._sensor_id]
+        if self._attr_native_value == value and self._raw_value == raw_value:
             return
 
-        self._state = state
-        self._state_raw = state_raw
+        self._attr_native_value = value
+        self._raw_value = raw_value
         _LOGGER.debug(
             "Update state: %s = %s (%s)",
             self.entity_id,
-            self._state,
-            self._state_raw,
+            self._attr_native_value,
+            self._raw_value,
         )

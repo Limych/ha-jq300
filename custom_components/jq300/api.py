@@ -36,7 +36,6 @@ from .const import (
     AVAILABLE_TIMEOUT,
     BINARY_SENSORS,
     CONF_PRECISION,
-    HTTP_NO_CONTENT,
     MWEIGTH_HCHO,
     MWEIGTH_TVOC,
     QUERY_TIMEOUT,
@@ -66,11 +65,11 @@ BASE_URL_DEVICE = "https://www.youpinyuntai.com:31447/device/"
 MQTT_URL = "mqtt://ye5h8c3n:T%4ran8c@www.youpinyuntai.com:55450"
 
 _USERAGENT_SYSTEM = "Android 6.0.1; RedMi Note 5 Build/RB3N5C"
-USERAGENT_API = "Dalvik/2.1.0 (Linux; U; %s)" % _USERAGENT_SYSTEM
+USERAGENT_API = f"Dalvik/2.1.0 (Linux; U; {_USERAGENT_SYSTEM})"
 USERAGENT_DEVICE = (
-    "Mozilla/5.0 (Linux; %s; wv) "
+    f"Mozilla/5.0 (Linux; {_USERAGENT_SYSTEM}; wv) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 "
-    "Chrome/68.0.3440.91 Mobile Safari/537.36" % _USERAGENT_SYSTEM
+    "Chrome/68.0.3440.91 Mobile Safari/537.36"
 )
 
 
@@ -157,7 +156,7 @@ class Jq300Account:
         if query_type == QUERY_TYPE_DEVICE:
             return USERAGENT_DEVICE
 
-        raise ValueError('Unknown query type "%s"' % query_type)
+        raise ValueError(f'Unknown query type "{query_type}"')
 
     def _add_url_params(self, url: str, extra_params: dict):
         """Add params to URL."""
@@ -176,7 +175,7 @@ class Jq300Account:
         elif query_type == QUERY_TYPE_DEVICE:
             url = BASE_URL_DEVICE + function
         else:
-            raise ValueError('Unknown query type "%s"' % query_type)
+            raise ValueError(f'Unknown query type "{query_type}"')
 
         if extra_params:
             url = self._add_url_params(url, extra_params)
@@ -213,8 +212,9 @@ class Jq300Account:
             _LOGGER.error("Error! %s", err_msg)
             return None
 
-        if (
-            response.status != HTTPStatus.OK and response.status != HTTP_NO_CONTENT
+        if response.status not in (
+            HTTPStatus.OK,
+            HTTPStatus.NO_CONTENT,
         ):  # pragma: no cover
             _LOGGER.debug(MSG_GENERIC_FAIL)
             return None

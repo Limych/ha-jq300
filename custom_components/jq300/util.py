@@ -31,4 +31,4 @@ def mask_email(email: str):
     parts = domain.split(".")
     dname = ".".join(parts[:-1])
     dtype = parts[-1]
-    return "{}@{}.{}".format(mask(local), mask(dname), dtype)
+    return f"{mask(local)}@{mask(dname)}.{dtype}"
