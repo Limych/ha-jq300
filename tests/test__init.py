@@ -22,6 +22,10 @@ from custom_components.jq300 import (
 from tests.const import MOCK_CONFIG
 
 
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    yield
+
 async def test_async_setup(hass: HomeAssistant):
     """Test a successful setup component."""
     with assert_setup_component(5, DOMAIN):
