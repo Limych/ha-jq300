@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+import pytest
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.core import HomeAssistant
 
@@ -11,6 +12,7 @@ from custom_components.jq300.config_flow import Jq300FlowHandler
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):
+    """Use enable_custom_integrations in this module."""
     yield
 
 
