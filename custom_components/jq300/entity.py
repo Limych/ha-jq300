@@ -50,15 +50,11 @@ class Jq300Entity(Entity):
             "manufacturer": self._device.get("brandname"),
             "model": self._device.get("pt_model"),
         }
+        self._attr_extra_state_attributes = {
+            ATTR_ATTRIBUTION: ATTRIBUTION,
+        }
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
         return self._account.device_available(self._device_id)
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
-        }

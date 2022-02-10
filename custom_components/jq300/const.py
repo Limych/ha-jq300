@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "JQ-300/200/100 Indoor Air Quality Meter"
 DOMAIN = "jq300"
-VERSION = "0.10.0"
+VERSION = "0.10.1-alpha"
 ATTRIBUTION = "Data provided by JQ-300 Cloud"
 ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
 

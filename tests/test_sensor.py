@@ -24,7 +24,7 @@ async def test_entity_initialization(hass: HomeAssistant, mock_account: Jq300Acc
     assert entity.name == "Kitchen HCHO"
     assert entity.icon == "mdi:cloud"
     assert entity.device_class is None
-    assert entity.device_state_attributes == expected_attributes
+    assert entity.extra_state_attributes == expected_attributes
 
     assert entity.state == 12
     assert entity.unit_of_measurement == "ppb"

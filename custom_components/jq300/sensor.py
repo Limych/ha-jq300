@@ -101,13 +101,7 @@ class Jq300Sensor(Jq300Entity, SensorEntity):
         self._attr_native_unit_of_measurement = self._account.units[sensor_id]
         self._attr_native_value = sensor_state
         self._attr_state_class = STATE_CLASS_MEASUREMENT
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        attr = super().device_state_attributes
-        attr[ATTR_RAW_STATE] = self._raw_value
-        return attr
+        self._attr_extra_state_attributes[ATTR_RAW_STATE] = self._raw_value
 
     def update(self):
         """Update the sensor state if it needed."""
@@ -120,11 +114,9 @@ class Jq300Sensor(Jq300Entity, SensorEntity):
         if self._attr_native_value == value and self._raw_value == raw_value:
             return
 
-        self._attr_native_value = value
         self._raw_value = raw_value
-        _LOGGER.debug(
-            "Update state: %s = %s (%s)",
-            self.entity_id,
-            self._attr_native_value,
-            self._raw_value,
-        )
+
+        self._attr_native_value = value
+        self._attr_extra_state_attributes[ATTR_RAW_STATE] = raw_value
+
+        _LOGGER.debug("Update state: %s = %s (%s)", self.entity_id, value, raw_value)

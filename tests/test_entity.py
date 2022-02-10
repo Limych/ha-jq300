@@ -37,4 +37,4 @@ async def test_entity_initialization(mock_account: Jq300Account):
     assert entity.should_poll is True
     assert entity.device_class is None
     assert entity.device_info == expected_device_info
-    assert entity.device_state_attributes == expected_attributes
+    assert entity.extra_state_attributes == expected_attributes
