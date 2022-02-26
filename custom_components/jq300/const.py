@@ -10,6 +10,7 @@ https://github.com/Limych/ha-jq300
 """
 
 from datetime import timedelta
+from typing import Final
 
 from homeassistant.components.binary_sensor import DEVICE_CLASS_PROBLEM
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
@@ -30,13 +31,13 @@ from homeassistant.const import (
 )
 
 # Base component constants
-NAME = "JQ-300/200/100 Indoor Air Quality Meter"
-DOMAIN = "jq300"
-VERSION = "0.10.1"
-ATTRIBUTION = "Data provided by JQ-300 Cloud"
-ISSUE_URL = "https://github.com/Limych/ha-jq300/issues"
+NAME: Final = "JQ-300/200/100 Indoor Air Quality Meter"
+DOMAIN: Final = "jq300"
+VERSION: Final = "0.10.2-alpha"
+ATTRIBUTION: Final = "Data provided by JQ-300 Cloud"
+ISSUE_URL: Final = "https://github.com/Limych/ha-jq300/issues"
 
-STARTUP_MESSAGE = f"""
+STARTUP_MESSAGE: Final = f"""
 -------------------------------------------------------------------
 {NAME}
 Version: {VERSION}
@@ -51,33 +52,33 @@ If you have ANY issues with this you need to open an issue here:
 # Device classes
 
 # Platforms
-PLATFORMS = [BINARY_SENSOR, SENSOR]
+PLATFORMS: Final = [BINARY_SENSOR, SENSOR]
 
 # Configuration and options
-CONF_RECEIVE_TVOC_IN_PPB = "receive_tvoc_in_ppb"
-CONF_RECEIVE_HCHO_IN_PPB = "receive_hcho_in_ppb"
-CONF_ACCOUNT_CONTROLLER = "account_controller"
-CONF_YAML = "_yaml"
-CONF_PRECISION = "precision"
+CONF_RECEIVE_TVOC_IN_PPB: Final = "receive_tvoc_in_ppb"
+CONF_RECEIVE_HCHO_IN_PPB: Final = "receive_hcho_in_ppb"
+CONF_ACCOUNT_CONTROLLER: Final = "account_controller"
+CONF_YAML: Final = "_yaml"
+CONF_PRECISION: Final = "precision"
 
 # Defaults
 
 # Attributes
-ATTR_DEVICE_ID = "device_id"
-ATTR_DEVICE_BRAND = "device_brand"
-ATTR_DEVICE_MODEL = "device_model"
-ATTR_RAW_STATE = "raw_state"
+ATTR_DEVICE_ID: Final = "device_id"
+ATTR_DEVICE_BRAND: Final = "device_brand"
+ATTR_DEVICE_MODEL: Final = "device_model"
+ATTR_RAW_STATE: Final = "raw_state"
 
-SENSORS_FILTER_FRAME = timedelta(minutes=5)
+SENSORS_FILTER_FRAME: Final = timedelta(minutes=5)
 
-QUERY_TIMEOUT = 7  # seconds
-UPDATE_TIMEOUT = 12  # seconds
-AVAILABLE_TIMEOUT = 30  # seconds
+QUERY_TIMEOUT: Final = 7  # seconds
+UPDATE_TIMEOUT: Final = 12  # seconds
+AVAILABLE_TIMEOUT: Final = 30  # seconds
 
-MWEIGTH_TVOC = 100  # g/mol
-MWEIGTH_HCHO = 30.0260  # g/mol
+MWEIGTH_TVOC: Final = 100  # g/mol
+MWEIGTH_HCHO: Final = 30.0260  # g/mol
 
-BINARY_SENSORS = {
+BINARY_SENSORS: Final = {
     1: {
         CONF_NAME: "Air Quality Alert",
         CONF_ICON: "mdi:alert",
@@ -85,7 +86,7 @@ BINARY_SENSORS = {
     },
 }
 
-SENSORS = {
+SENSORS: Final = {
     4: {
         CONF_NAME: "Internal Temperature",
         CONF_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
