@@ -1,2 +1,2 @@
-homeassistant>=2021.12
+homeassistant>=2022.4
 paho-mqtt==1.6.1
