@@ -73,7 +73,7 @@ SENSORS_FILTER_FRAME: Final = timedelta(minutes=5)
 
 QUERY_TIMEOUT: Final = 7  # seconds
 UPDATE_TIMEOUT: Final = 12  # seconds
-AVAILABLE_TIMEOUT: Final = 30  # seconds
+AVAILABLE_TIMEOUT: Final = 1800  # seconds
 
 MWEIGTH_TVOC: Final = 100  # g/mol
 MWEIGTH_HCHO: Final = 30.0260  # g/mol
