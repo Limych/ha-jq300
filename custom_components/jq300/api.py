@@ -457,7 +457,7 @@ class Jq300Account:
         res = {}
         for sensor in sensors:
             sensor_id = sensor["seq"]
-            if sensor["content"] is None or (
+            if sensor["content"] is None or sensor["content"] == "" or (
                 sensor_id not in SENSORS and sensor_id not in BINARY_SENSORS
             ):
                 continue
