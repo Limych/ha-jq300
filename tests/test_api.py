@@ -4,11 +4,8 @@ import asyncio
 import logging
 from unittest.mock import patch
 
-import homeassistant.util.dt as dt_util
-import pytest
 from asynctest import CoroutineMock
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import pytest
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
@@ -25,6 +22,9 @@ from custom_components.jq300.api import (
     USERAGENT_DEVICE,
     Jq300Account,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import homeassistant.util.dt as dt_util
 
 
 @pytest.fixture
@@ -210,7 +210,7 @@ async def test_async_update_devices(
     }
 
     assert aioclient_mock.call_count == 0
-    assert api._sensors == {}
+    assert not api._sensors
 
     res = await api.async_update_devices()
     #
@@ -327,7 +327,7 @@ async def test_async_update_sensors(
     api = Jq300Account(hass, session, "test@email.com", "test_password", False, False)
 
     assert aioclient_mock.call_count == 0
-    assert api._sensors_raw == {}
+    assert not api._sensors_raw
 
     api._active_devices = [123]
     api._devices = {123: {"deviceToken": "qwe"}}
@@ -359,7 +359,7 @@ async def test_async_update_sensors_pass(
     api = Jq300Account(hass, session, "test@email.com", "test_password", False, False)
 
     assert aioclient_mock.call_count == 0
-    assert api._sensors_raw == {}
+    assert not api._sensors_raw
 
     api._active_devices = [123]
     api._sensors_raw = {123: "qwe"}

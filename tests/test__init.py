@@ -2,9 +2,6 @@
 """Test integration_blueprint setup process."""
 
 import pytest
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     assert_setup_component,
@@ -18,6 +15,9 @@ from custom_components.jq300 import (
     async_setup_entry,
     async_unload_entry,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.setup import async_setup_component
 
 from tests.const import MOCK_CONFIG
 

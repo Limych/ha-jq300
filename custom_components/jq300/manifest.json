@@ -1,7 +1,7 @@
 {
     "domain": "jq300",
     "name": "JQ-300/200/100 Indoor Air Quality Meter",
-    "version": "0.10.5",
+    "version": "0.10.6-alpha",
     "documentation": "https://github.com/Limych/ha-jq300",
     "issue_tracker": "https://github.com/Limych/ha-jq300/issues",
     "dependencies": [],

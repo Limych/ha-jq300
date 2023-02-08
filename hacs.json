@@ -1,5 +1,5 @@
 {
     "name": "JQ-300/200/100 Indoor Air Quality Meter",
     "hacs": "1.6.0",
-    "homeassistant": "2022.6.0"
+    "homeassistant": "2022.10.0"
 }

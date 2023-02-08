@@ -2,8 +2,7 @@
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-"""
-Integration of the JQ-300/200/100 indoor air quality meter.
+"""Integration of the JQ-300/200/100 indoor air quality meter.
 
 For more details about this component, please refer to
 https://github.com/Limych/ha-jq300
@@ -12,8 +11,10 @@ https://github.com/Limych/ha-jq300
 from datetime import timedelta
 from typing import Final
 
-from homeassistant.components.binary_sensor import DEVICE_CLASS_PROBLEM
-from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
+from homeassistant.components.binary_sensor import (
+    DEVICE_CLASS_PROBLEM,
+    DOMAIN as BINARY_SENSOR,
+)
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.const import (
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
@@ -33,7 +34,7 @@ from homeassistant.const import (
 # Base component constants
 NAME: Final = "JQ-300/200/100 Indoor Air Quality Meter"
 DOMAIN: Final = "jq300"
-VERSION: Final = "0.10.5"
+VERSION: Final = "0.10.6-alpha"
 ATTRIBUTION: Final = "Data provided by JQ-300 Cloud"
 ISSUE_URL: Final = "https://github.com/Limych/ha-jq300/issues"
 

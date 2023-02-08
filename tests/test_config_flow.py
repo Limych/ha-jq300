@@ -2,11 +2,10 @@
 
 from unittest.mock import patch
 
-from homeassistant import config_entries, data_entry_flow
-from homeassistant.core import HomeAssistant
-
 from custom_components.jq300 import DOMAIN
 from custom_components.jq300.config_flow import Jq300FlowHandler
+from homeassistant import config_entries, data_entry_flow
+from homeassistant.core import HomeAssistant
 
 
 async def test_async_step_import(hass: HomeAssistant):
