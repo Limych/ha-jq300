@@ -1,12 +1,12 @@
 # pylint: disable=protected-access,redefined-outer-name
 """The test for the entity."""
 
-from homeassistant.exceptions import PlatformNotReady
 from pytest import raises
 
 from custom_components.jq300 import Jq300Account
 from custom_components.jq300.const import ATTRIBUTION, DOMAIN
 from custom_components.jq300.entity import Jq300Entity
+from homeassistant.exceptions import PlatformNotReady
 
 
 async def test_entity_initialization(mock_account: Jq300Account):

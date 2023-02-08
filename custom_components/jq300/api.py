@@ -1,5 +1,4 @@
-"""
-Integration of the JQ-300/200/100 indoor air quality meter.
+"""Integration of the JQ-300/200/100 indoor air quality meter.
 
 For more details about this component, please refer to
 https://github.com/Limych/ha-jq300
@@ -10,18 +9,19 @@ https://github.com/Limych/ha-jq300
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 import asyncio
-import json
-import logging
 from datetime import timedelta
 from http import HTTPStatus
+import json
+import logging
 from time import monotonic
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
-import async_timeout
-import homeassistant.util.dt as dt_util
-import paho.mqtt.client as mqtt
 from aiohttp import ClientSession
+import async_timeout
+import paho.mqtt.client as mqtt
+from requests import PreparedRequest
+
 from homeassistant.const import (
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONCENTRATION_PARTS_PER_BILLION,
@@ -30,7 +30,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
-from requests import PreparedRequest
+import homeassistant.util.dt as dt_util
 
 from .const import (
     AVAILABLE_TIMEOUT,
@@ -362,11 +362,11 @@ class Jq300Account:
         if not self.devices:
             return []
 
-        return list(
+        return [
             self.devices[dev_id]["deviceToken"]
             for dev_id in device_ids
             if dev_id in self.devices
-        )
+        ]
 
     @property
     def active_devices(self) -> List[int]:
@@ -457,8 +457,10 @@ class Jq300Account:
         res = {}
         for sensor in sensors:
             sensor_id = sensor["seq"]
-            if sensor["content"] is None or sensor["content"] == "" or (
-                sensor_id not in SENSORS and sensor_id not in BINARY_SENSORS
+            if (
+                sensor["content"] is None
+                or sensor["content"] == ""
+                or (sensor_id not in SENSORS and sensor_id not in BINARY_SENSORS)
             ):
                 continue
 
@@ -569,7 +571,7 @@ class Jq300Account:
         """Update current states of all active devices for account."""
         start = monotonic()
         try:
-            with async_timeout.timeout(timeout):
+            async with async_timeout.timeout(timeout):
                 await self.async_update_sensors()
 
         except asyncio.TimeoutError as err:

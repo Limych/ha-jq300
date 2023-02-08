@@ -1,12 +1,11 @@
 # pylint: disable=protected-access,redefined-outer-name
 """The test for the sensor platform."""
 
-import homeassistant.util.dt as dt_util
-from homeassistant.core import HomeAssistant
-
 from custom_components.jq300 import Jq300Account
 from custom_components.jq300.const import ATTRIBUTION
 from custom_components.jq300.sensor import Jq300Sensor
+from homeassistant.core import HomeAssistant
+import homeassistant.util.dt as dt_util
 
 
 async def test_entity_initialization(hass: HomeAssistant, mock_account: Jq300Account):

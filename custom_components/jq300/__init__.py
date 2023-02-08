@@ -2,25 +2,25 @@
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-"""
-Integration of the JQ-300/200/100 indoor air quality meter.
+"""Integration of the JQ-300/200/100 indoor air quality meter.
 
 For more details about this component, please refer to
 https://github.com/Limych/ha-jq300
 """
 
 import asyncio
-import logging
 from datetime import timedelta
+import logging
 
 import async_timeout
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_DEVICES, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .api import Jq300Account
@@ -97,7 +97,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     try:
-        with async_timeout.timeout(UPDATE_TIMEOUT):
+        async with async_timeout.timeout(UPDATE_TIMEOUT):
             devices = await account.async_update_devices()
     except asyncio.TimeoutError as exc:
         raise ConfigEntryNotReady from exc

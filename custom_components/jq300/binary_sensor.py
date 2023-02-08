@@ -2,8 +2,7 @@
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-"""
-Integration of the JQ-300/200/100 indoor air quality meter.
+"""Integration of the JQ-300/200/100 indoor air quality meter.
 
 For more details about this component, please refer to
 https://github.com/Limych/ha-jq300

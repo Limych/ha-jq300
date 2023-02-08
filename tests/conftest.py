@@ -18,12 +18,12 @@
 import asyncio
 from unittest.mock import patch
 
-import pytest
 from asynctest import CoroutineMock
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import pytest
 
 from custom_components.jq300 import Jq300Account
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 pytest_plugins = "pytest_homeassistant_custom_component"  # pylint: disable=invalid-name
 
