@@ -12,29 +12,39 @@ from datetime import timedelta
 from typing import Final
 
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_PROBLEM,
     DOMAIN as BINARY_SENSOR,
+    BinarySensorDeviceClass,
 )
-from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.sensor import DOMAIN as SENSOR, SensorDeviceClass
 from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_PARTS_PER_MILLION,
     CONF_DEVICE_CLASS,
     CONF_ENTITY_ID,
     CONF_ICON,
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
     PERCENTAGE,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
+
+try:
+    from homeassistant.const import UnitOfDensity, UnitOfRatio
+
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER = UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER = UnitOfDensity.MILLIGRAMS_PER_CUBIC_METER
+    CONCENTRATION_PARTS_PER_BILLION = UnitOfRatio.PARTS_PER_BILLION
+    CONCENTRATION_PARTS_PER_MILLION = UnitOfRatio.PARTS_PER_MILLION
+except ImportError:  # Home Assistant < 2026.7
+    from homeassistant.const import (
+        CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+        CONCENTRATION_PARTS_PER_BILLION,  # noqa: F401
+        CONCENTRATION_PARTS_PER_MILLION,
+    )
 
 # Base component constants
 NAME: Final = "JQ-300/200/100 Indoor Air Quality Meter"
 DOMAIN: Final = "jq300"
-VERSION: Final = "0.10.6"
+VERSION: Final = "0.10.7"
 ATTRIBUTION: Final = "Data provided by JQ-300 Cloud"
 ISSUE_URL: Final = "https://github.com/Limych/ha-jq300/issues"
 
@@ -83,23 +93,23 @@ BINARY_SENSORS: Final = {
     1: {
         CONF_NAME: "Air Quality Alert",
         CONF_ICON: "mdi:alert",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_PROBLEM,
+        CONF_DEVICE_CLASS: BinarySensorDeviceClass.PROBLEM,
     },
 }
 
 SENSORS: Final = {
     4: {
         CONF_NAME: "Internal Temperature",
-        CONF_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+        CONF_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
         CONF_ICON: "mdi:thermometer",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        CONF_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
         CONF_PRECISION: 1,
     },
     5: {
         CONF_NAME: "Humidity",
         CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
         CONF_ICON: "mdi:water-percent",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        CONF_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
         CONF_PRECISION: 1,
     },
     6: {

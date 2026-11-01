@@ -12,7 +12,6 @@ import asyncio
 from datetime import timedelta
 import logging
 
-import async_timeout
 import voluptuous as vol
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -97,7 +96,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     try:
-        async with async_timeout.timeout(UPDATE_TIMEOUT):
+        async with asyncio.timeout(UPDATE_TIMEOUT):
             devices = await account.async_update_devices()
     except asyncio.TimeoutError as exc:
         raise ConfigEntryNotReady from exc
@@ -120,10 +119,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     # Load platforms
-    for platform in PLATFORMS:
-        hass.async_add_job(
-            hass.config_entries.async_forward_entry_setup(entry, platform)
-        )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.add_update_listener(async_reload_entry)
     return True
