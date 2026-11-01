@@ -12,8 +12,8 @@ import logging
 
 from homeassistant.components.sensor import (
     ENTITY_ID_FORMAT,
-    STATE_CLASS_MEASUREMENT,
     SensorEntity,
+    SensorStateClass,
 )
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
@@ -99,7 +99,7 @@ class Jq300Sensor(Jq300Entity, SensorEntity):
         self._attr_device_class = SENSORS[sensor_id].get(CONF_DEVICE_CLASS)
         self._attr_native_unit_of_measurement = self._account.units[sensor_id]
         self._attr_native_value = sensor_state
-        self._attr_state_class = STATE_CLASS_MEASUREMENT
+        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_extra_state_attributes[ATTR_RAW_STATE] = self._raw_value
 
     def update(self):

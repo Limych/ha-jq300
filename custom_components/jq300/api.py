@@ -18,16 +18,10 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from aiohttp import ClientSession
-import async_timeout
 import paho.mqtt.client as mqtt
 from requests import PreparedRequest
 
-from homeassistant.const import (
-    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_PARTS_PER_BILLION,
-    CONCENTRATION_PARTS_PER_MILLION,
-    CONF_UNIT_OF_MEASUREMENT,
-)
+from homeassistant.const import CONF_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
 import homeassistant.util.dt as dt_util
@@ -35,6 +29,9 @@ import homeassistant.util.dt as dt_util
 from .const import (
     AVAILABLE_TIMEOUT,
     BINARY_SENSORS,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_PARTS_PER_BILLION,
+    CONCENTRATION_PARTS_PER_MILLION,
     CONF_PRECISION,
     MWEIGTH_HCHO,
     MWEIGTH_TVOC,
@@ -571,7 +568,7 @@ class Jq300Account:
         """Update current states of all active devices for account."""
         start = monotonic()
         try:
-            async with async_timeout.timeout(timeout):
+            async with asyncio.timeout(timeout):
                 await self.async_update_sensors()
 
         except asyncio.TimeoutError as err:
